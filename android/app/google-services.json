@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "531035609922",
+    "firebase_url": "https://much-todo-about-null.firebaseio.com",
+    "project_id": "much-todo-about-null",
+    "storage_bucket": "much-todo-about-null.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531035609922:android:dd884cbd9067cda0",
+        "android_client_info": {
+          "package_name": "com.example.muchtodo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "531035609922-sq9g0rd554agq415uqjt36g4k37aosli.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "531035609922-sq9g0rd554agq415uqjt36g4k37aosli.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5pHwYKwgCcHCluJRc_I_VRtvsrJ5oH98"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
