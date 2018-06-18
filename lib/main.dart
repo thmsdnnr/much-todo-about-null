@@ -130,23 +130,87 @@ class AddTasks extends StatelessWidget {
           title: new Text("Let's Do This."),
         ),
         body: new Center(
-          child: new Column(
-            children: <Widget>[
-              new TodoForm(),
-            ],
+          child: new TodoForm(),
           ),
-        ));
+        );
   }
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  var _data;
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
       appBar: new AppBar(
         title: new Text(widget.title),
       ),
-      drawer: new Drawer(
+      drawer: buildDrawer(),
+      body: new Center(
+          child: buildTodoList()),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: () => Navigator.push(context,
+            new MaterialPageRoute(builder: (context) => new AddTasks())),
+        tooltip: 'Add Todo',
+        child: new Icon(Icons.add),
+      ),
+    );
+  }
+
+  _hzStart() {
+    print("yes");
+  }
+
+  buildTodoList() {
+    return new GestureDetector(
+      onTap: () => print('tap'),
+      onHorizontalDragStart: _hzStart(),
+      child: new StreamBuilder<QuerySnapshot>(
+        stream: Firestore.instance
+            .collection('todos')
+            .orderBy("due", descending: false)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Text('Loading...');
+          return new ListView(
+              children: snapshot.data.documents.map<Widget>((DocumentSnapshot document) {
+                return buildTodoRow(document);
+            // return new ListTile(
+            //     title: new Text(document['task']),
+            //     subtitle: new Text(document['due'].toString()));
+          }).toList());
+        })
+    );
+  }
+
+void delete(item) {
+  if (_data.contains(item)) {
+    _data.remove(item);
+  }
+}
+Map<DismissDirection, double> _dismissThresholds() {
+  Map<DismissDirection, double> map = new Map<DismissDirection, double>();
+  map.putIfAbsent(DismissDirection.horizontal, () => 0.3);
+  return map;
+}
+  buildTodoRow(DocumentSnapshot doc) {
+     return new Dismissible(
+      key: new Key(doc.documentID.toString()),
+      direction: DismissDirection.horizontal,
+      onDismissed: (DismissDirection direction) {
+        print('delete ${doc.toString()}');
+      },
+      resizeDuration: null,
+      dismissThresholds: _dismissThresholds(),
+      // background: new LeaveBehindView(),
+      child: new ListTile(
+                title: new Text(doc['task']),
+                subtitle: new Text(doc['due'].toString()))
+      );
+  }
+
+  buildDrawer() {
+    return new Drawer(
           child: new SafeArea(
               child: new Container(
         margin: const EdgeInsets.all(20.0),
@@ -170,35 +234,6 @@ class _MyHomePageState extends State<MyHomePage> {
             title: const Text('Set Reminders'),
           )
         ]),
-      ))),
-      body: new Center(
-          // Center is a layout widget. It takes a single child and positions it
-          // in the middle of the parent.
-          child: buildTodoList()),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: () => Navigator.push(context,
-            new MaterialPageRoute(builder: (context) => new AddTasks())),
-        tooltip: 'Add Todo',
-        child: new Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
-
-  buildTodoList() {
-    return new StreamBuilder<QuerySnapshot>(
-        stream: Firestore.instance
-            .collection('todos')
-            .orderBy("due", descending: false)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Text('Loading...');
-          return new ListView(
-              children:
-                  snapshot.data.documents.map((DocumentSnapshot document) {
-            return new ListTile(
-                title: new Text(document['task']),
-                subtitle: new Text(document['due'].toString()));
-          }).toList());
-        });
+      )));
   }
 }
