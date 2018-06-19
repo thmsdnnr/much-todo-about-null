@@ -138,6 +138,7 @@ class AddTasks extends StatelessWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   var _data;
+  var _showCompleted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -146,8 +147,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: new Text(widget.title),
       ),
       drawer: buildDrawer(),
-      body: new Center(
-          child: buildTodoList()),
+      body: buildTodoList(grabTodos),
       floatingActionButton: new FloatingActionButton(
         onPressed: () => Navigator.push(context,
             new MaterialPageRoute(builder: (context) => new AddTasks())),
@@ -157,37 +157,30 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  _hzStart() {
-    print("yes");
+  grabTodos() {
+    return Firestore.instance
+      .collection('todos')
+      .orderBy("due", descending: false)
+      .snapshots();
   }
 
-  buildTodoList() {
-    return new GestureDetector(
-      onTap: () => print('tap'),
-      onHorizontalDragStart: _hzStart(),
+  buildTodoList(stream) {
+    return new Center(
+          child: GestureDetector(
       child: new StreamBuilder<QuerySnapshot>(
-        stream: Firestore.instance
-            .collection('todos')
-            .orderBy("due", descending: false)
-            .snapshots(),
+        stream: stream(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Text('Loading...');
           return new ListView(
-              children: snapshot.data.documents.map<Widget>((DocumentSnapshot document) {
+              children: snapshot.data.documents.where((doc) => doc['completed'] == _showCompleted)
+                .map<Widget>((DocumentSnapshot document) {
                 return buildTodoRow(document);
-            // return new ListTile(
-            //     title: new Text(document['task']),
-            //     subtitle: new Text(document['due'].toString()));
           }).toList());
         })
+    )
     );
   }
 
-void delete(item) {
-  if (_data.contains(item)) {
-    _data.remove(item);
-  }
-}
 Map<DismissDirection, double> _dismissThresholds() {
   Map<DismissDirection, double> map = new Map<DismissDirection, double>();
   map.putIfAbsent(DismissDirection.horizontal, () => 0.3);
@@ -198,12 +191,47 @@ Map<DismissDirection, double> _dismissThresholds() {
       key: new Key(doc.documentID.toString()),
       direction: DismissDirection.horizontal,
       onDismissed: (DismissDirection direction) {
-        print('delete ${doc.toString()}');
+        if (direction == DismissDirection.endToStart){
+          Firestore.instance.runTransaction((transaction) async {
+            DocumentSnapshot freshSnap = await transaction.get(doc.reference);
+            var payload = _showCompleted ? {
+              'completed': false,
+              'completed_at': null,
+            } : {
+              'completed': true,
+              'completed_at': new DateTime.now(),
+            };
+            await transaction.update(freshSnap.reference, payload);
+          });
+        }
+        if (direction == DismissDirection.startToEnd){
+          print('edit ${doc.toString()}');
+        }
       },
       resizeDuration: null,
       dismissThresholds: _dismissThresholds(),
-      // background: new LeaveBehindView(),
-      child: new ListTile(
+      background: new ListTile(
+                    title: new Row(
+                      children: <Widget>[
+                        new Container(
+                          child: new Container(
+                            color: Theme.of(context).buttonColor,
+                            child: IconButton(
+                            icon: new Icon(Icons.delete),
+                            onPressed: () => print('hi'),
+                            ),
+                          )
+                        ),
+                        new Container(
+                          child: new IconButton(
+                            icon: new Icon(Icons.edit),
+                            onPressed: () => print('him'),
+                          ),
+                        ),
+                      ],
+                    )
+                  ),
+        child: new ListTile(
                 title: new Text(doc['task']),
                 subtitle: new Text(doc['due'].toString()))
       );
@@ -227,7 +255,12 @@ Map<DismissDirection, double> _dismissThresholds() {
               }),
           new ListTile(
             leading: const Icon(Icons.ac_unit),
-            title: const Text('Filter Todos'),
+            title: new Text(_showCompleted == true ? 'Underway Todos' : 'Completed Todos'),
+            onTap: () { setState(() {
+              _showCompleted = !_showCompleted;
+              });
+              Navigator.pop(context);
+            }
           ),
           new ListTile(
             leading: const Icon(Icons.access_alarm),
