@@ -101,23 +101,22 @@ class TodoFormState extends State<TodoForm> {
                   new Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       child: new MaterialButton(
-                        height: 50.0,
-                        minWidth: 400.0,
-                        color: Theme.of(context).primaryColorDark,
-                        child: new Text(
-                          'do it!',
-                          style: new TextStyle(
-                            color: Color(0xFFFFFFFF),
-                            fontSize: 24.0,
-                            letterSpacing: 1.0,
+                          height: 50.0,
+                          minWidth: 400.0,
+                          color: Theme.of(context).primaryColorDark,
+                          child: new Text(
+                            'do it!',
+                            style: new TextStyle(
+                              color: Color(0xFFFFFFFF),
+                              fontSize: 24.0,
+                              letterSpacing: 1.0,
+                            ),
                           ),
-                        ),
-                        onPressed: () {
-                          if (_formKey.currentState.validate()) {
-                            submit();
-                          }
-                        }
-                      ))
+                          onPressed: () {
+                            if (_formKey.currentState.validate()) {
+                              submit();
+                            }
+                          }))
                 ])));
   }
 }
@@ -126,27 +125,53 @@ class AddTasks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-        appBar: new AppBar(
-          title: new Text("Let's Do This."),
-        ),
-        body: new Center(
-          child: new TodoForm(),
-          ),
-        );
+      appBar: new AppBar(
+        title: new Text("Let's Do This."),
+      ),
+      body: new Center(
+        child: new TodoForm(),
+      ),
+    );
   }
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  var _data;
   var _showCompleted = false;
+  var _completed;
+  var _total;
+  var _ongoing;
+
+  final String _menuValue1 = 'Completed';
+  final String _menuValue2 = 'Ongoing';
+
+  void showMenuSelection(String value) {
+    if (<String>[_menuValue1, _menuValue2].contains(value)) if (value ==
+        "Completed") {
+      setState(() {
+        _showCompleted = true;
+      });
+    } else {
+      setState(() {
+        _showCompleted = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    var _title = _showCompleted ? "stuff i've done" : "stuff i've to do";
     return new Scaffold(
-      appBar: new AppBar(
-        title: new Text(widget.title),
-      ),
-      drawer: buildDrawer(),
+      appBar: new AppBar(title: new Text(_title), actions: <Widget>[
+        new PopupMenuButton<String>(
+          onSelected: showMenuSelection,
+          itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
+                new PopupMenuItem<String>(
+                    value: _menuValue1, child: new Text('Completed ($_completed)')),
+                new PopupMenuItem<String>(
+                    value: _menuValue2, child: new Text('In Progress ($_ongoing)')),
+              ],
+        )
+      ]),
       body: buildTodoList(grabTodos),
       floatingActionButton: new FloatingActionButton(
         onPressed: () => Navigator.push(context,
@@ -159,114 +184,123 @@ class _MyHomePageState extends State<MyHomePage> {
 
   grabTodos() {
     return Firestore.instance
-      .collection('todos')
-      .orderBy("due", descending: false)
-      .snapshots();
+        .collection('todos')
+        .orderBy("due", descending: false)
+        .snapshots();
   }
 
   buildTodoList(stream) {
     return new Center(
-          child: GestureDetector(
-      child: new StreamBuilder<QuerySnapshot>(
-        stream: stream(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Text('Loading...');
-          return new ListView(
-              children: snapshot.data.documents.where((doc) => doc['completed'] == _showCompleted)
-                .map<Widget>((DocumentSnapshot document) {
-                return buildTodoRow(document);
-          }).toList());
-        })
-    )
-    );
+        child: GestureDetector(
+            child: new StreamBuilder<QuerySnapshot>(
+                stream: stream(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const Text('Loading...');
+                    _completed = snapshot.data.documents.where((doc) => doc['completed']).length;
+                    _total = snapshot.data.documents.length;
+                    _ongoing = _total - _completed;
+                  return new ListView(
+                      children: snapshot.data.documents
+                          .where((doc) => doc['completed'] == _showCompleted)
+                          .map<Widget>((DocumentSnapshot document) {
+                    return buildTodoRow(document);
+                  }).toList());
+                })));
   }
 
-Map<DismissDirection, double> _dismissThresholds() {
-  Map<DismissDirection, double> map = new Map<DismissDirection, double>();
-  map.putIfAbsent(DismissDirection.horizontal, () => 0.3);
-  return map;
-}
+  Map<DismissDirection, double> _dismissThresholds() {
+    Map<DismissDirection, double> map = new Map<DismissDirection, double>();
+    map.putIfAbsent(DismissDirection.horizontal, () => 0.3);
+    return map;
+  }
+
   buildTodoRow(DocumentSnapshot doc) {
-     return new Dismissible(
-      key: new Key(doc.documentID.toString()),
-      direction: DismissDirection.horizontal,
-      onDismissed: (DismissDirection direction) {
-        if (direction == DismissDirection.endToStart){
-          Firestore.instance.runTransaction((transaction) async {
-            DocumentSnapshot freshSnap = await transaction.get(doc.reference);
-            var payload = _showCompleted ? {
-              'completed': false,
-              'completed_at': null,
-            } : {
-              'completed': true,
-              'completed_at': new DateTime.now(),
-            };
-            await transaction.update(freshSnap.reference, payload);
-          });
-        }
-        if (direction == DismissDirection.startToEnd){
-          print('edit ${doc.toString()}');
-        }
-      },
-      resizeDuration: null,
-      dismissThresholds: _dismissThresholds(),
-      background: new ListTile(
-                    title: new Row(
-                      children: <Widget>[
-                        new Container(
-                          child: new Container(
-                            color: Theme.of(context).buttonColor,
-                            child: IconButton(
-                            icon: new Icon(Icons.delete),
-                            onPressed: () => print('hi'),
-                            ),
-                          )
-                        ),
-                        new Container(
-                          child: new IconButton(
-                            icon: new Icon(Icons.edit),
-                            onPressed: () => print('him'),
-                          ),
-                        ),
-                      ],
-                    )
-                  ),
+    final ThemeData theme = Theme.of(context);
+    return new Builder(
+      builder: (BuildContext context) {
+        return new Dismissible(
+        key: new Key(doc.documentID.toString()),
+        direction: DismissDirection.horizontal,
+        onDismissed: (DismissDirection direction) {
+          final String action = (direction == DismissDirection.endToStart) ? 'completed' : 'deleted';
+          Scaffold.of(context).showSnackBar(new SnackBar(
+          content: new Text('You $action the task!'),
+          action: new SnackBarAction(
+            label: 'UNDO',
+            onPressed: () { print('Please implement undo!'); } // TODO: implement undo
+          )
+        ));
+          if (direction == DismissDirection.endToStart) { // Completion
+            Firestore.instance.runTransaction((transaction) async {
+              DocumentSnapshot freshSnap = await transaction.get(doc.reference);
+              var payload = _showCompleted
+                  ? {
+                      'completed': false,
+                      'completed_at': null,
+                    }
+                  : {
+                      'completed': true,
+                      'completed_at': new DateTime.now(),
+                    };
+              await transaction.update(freshSnap.reference, payload);
+            });
+          }
+          if (direction == DismissDirection.startToEnd) {
+            // TODO: implement deletion / archiving
+            print('Deleted. Please implement!');
+          }
+        },
+        resizeDuration: null,
+        dismissThresholds: _dismissThresholds(),
+        background: new Container(
+        color: theme.errorColor,
+        child: const ListTile(
+          contentPadding: EdgeInsets.only(top:4.0, left: 16.0),
+          leading: const Icon(Icons.delete, color: Colors.white, size: 36.0)
+        )
+      ),
+      secondaryBackground: new Container(
+        color: theme.primaryColorLight,
+        child: const ListTile(
+          contentPadding: EdgeInsets.only(top:4.0, right: 16.0),
+          trailing: const Icon(Icons.check, color: Colors.white, size: 36.0)
+        )
+      ),
         child: new ListTile(
-                title: new Text(doc['task']),
-                subtitle: new Text(doc['due'].toString()))
-      );
+            title: new Text(doc['task']),
+            subtitle: new Text(doc['due'].toString())));
+    });
   }
 
   buildDrawer() {
     return new Drawer(
-          child: new SafeArea(
-              child: new Container(
-        margin: const EdgeInsets.all(20.0),
-        child: new Column(children: <Widget>[
-          new ListTile(
-              leading: const Icon(Icons.add_circle_outline),
-              title: const Text('Add Todo'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                    context,
-                    new MaterialPageRoute(
-                        builder: (context) => new AddTasks()));
-              }),
-          new ListTile(
+        child: new SafeArea(
+            child: new Container(
+      margin: const EdgeInsets.all(20.0),
+      child: new Column(children: <Widget>[
+        new ListTile(
+            leading: const Icon(Icons.add_circle_outline),
+            title: const Text('Add Todo'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  new MaterialPageRoute(builder: (context) => new AddTasks()));
+            }),
+        new ListTile(
             leading: const Icon(Icons.ac_unit),
-            title: new Text(_showCompleted == true ? 'Underway Todos' : 'Completed Todos'),
-            onTap: () { setState(() {
-              _showCompleted = !_showCompleted;
+            title: new Text(
+                _showCompleted == true ? 'In Progress' : 'Completed'),
+            onTap: () {
+              setState(() {
+                _showCompleted = !_showCompleted;
               });
               Navigator.pop(context);
-            }
-          ),
-          new ListTile(
-            leading: const Icon(Icons.access_alarm),
-            title: const Text('Set Reminders'),
-          )
-        ]),
-      )));
+            }),
+        new ListTile(
+          leading: const Icon(Icons.access_alarm),
+          title: const Text('Set Reminders'),
+        )
+      ]),
+    )));
   }
 }
