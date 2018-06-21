@@ -76,14 +76,18 @@ class TodoFormState extends State<TodoForm> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  new TextFormField(validator: (value) {
+                  new TextFormField(
+                    autofocus: true,
+                    validator: (value) {
                     if (value.isEmpty) {
                       return "That is much todo about nothing!";
                     }
                   }, onSaved: (String todo) {
                     this._data.todo = todo;
                   }),
-                  DateTimePicker(
+                  DateTimePicker( // TODO: make dropdown with "Today" / "Tomorrow" / etc
+                  // more specific calendar icon to launch the DateTimePicker
+                  // preferences to set "EOD" midnight, 5pm etc
                     labelText: 'Due Date',
                     selectedDate: _toDate,
                     selectedTime: _toTime,
@@ -128,14 +132,19 @@ class AddTasks extends StatelessWidget {
       appBar: new AppBar(
         title: new Text("Let's Do This."),
       ),
-      body: new Center(
+      body: new SafeArea(
         child: new TodoForm(),
-      ),
+      )
     );
   }
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  // TODO: add "todo dashboard" to front page with a graph thing or whatevs
+  // TODO: time estimates "that's ambitious", etc.
+  // TODO: add login
+  // TODO: add todo list export / e-mail reminders / text reminders
+  // TODO: system notifications https://pub.dartlang.org/packages/firebase_messaging
   var _showCompleted = false;
   var _completed;
   var _total;
@@ -159,6 +168,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // TODO: add button to sort asc/desc
+    // TODO: add button to filter ()
     var _title = _showCompleted ? "stuff i've done" : "stuff i've to do";
     return new Scaffold(
       appBar: new AppBar(title: new Text(_title), actions: <Widget>[
@@ -190,6 +201,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   buildTodoList(stream) {
+    // TODO: toggle dividers for rows
+    // TODO: day view
     return new Center(
         child: GestureDetector(
             child: new StreamBuilder<QuerySnapshot>(
@@ -215,6 +228,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   buildTodoRow(DocumentSnapshot doc) {
+    // TODO: make build Todo Row have ability to show child items
+    // TODO: chips
+    // TODO: progress bar
+    // TODO: make ListTile subtitle date formatted better
+    // TODO: conditional / color formatting
     final ThemeData theme = Theme.of(context);
     return new Builder(
       builder: (BuildContext context) {
