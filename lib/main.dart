@@ -151,9 +151,15 @@ class _MyHomePageState extends State<MyHomePage> {
   var _completed;
   var _total;
   var _ongoing;
+  var _filterByTime = false;
+  var _timeFilterDuration;
 
   final String _menuValue1 = 'Completed';
   final String _menuValue2 = 'Ongoing';
+
+  final String _duration1 = 'Today';
+  final String _duration2 = 'This Week';
+  final String _duration3 = 'Past Due';
 
   void showMenuSelection(String value) {
     if (<String>[_menuValue1, _menuValue2].contains(value)) if (value ==
@@ -164,6 +170,13 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       setState(() {
         _showCompleted = false;
+      });
+    }
+    if (<String>[_duration1, _duration2, _duration3].contains(value)) if (value ==
+    "Today") {
+      setState(() {
+        _filterByTime = true;
+        _timeFilterDuration = value;
       });
     }
   }
@@ -200,7 +213,22 @@ class _MyHomePageState extends State<MyHomePage> {
     var _title = _showCompleted ? "stuff i've done" : "stuff i've to do";
     return new Scaffold(
       appBar: new AppBar(title: new Text(_title), actions: <Widget>[
-        new PopupMenuButton<String>(
+        PopupMenuButton<String>(
+          icon: Icon(Icons.filter_list),
+          onSelected: showMenuSelection,
+          itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
+                PopupMenuItem<String>(
+                    value: _duration1,
+                    child: Text('Today ($_completed)')),
+                PopupMenuItem<String>(
+                    value: _duration2,
+                    child: Text('This Week ($_ongoing)')),
+                PopupMenuItem<String>(
+                    value: _duration3,
+                    child: Text('Past due ($_ongoing)')),
+              ],
+        ),
+        PopupMenuButton<String>(
           onSelected: showMenuSelection,
           itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
                 new PopupMenuItem<String>(
