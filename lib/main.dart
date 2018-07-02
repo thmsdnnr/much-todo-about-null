@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:much_todo/datepicker.dart';
+import 'dart:core';
 
 void main() => runApp(new MyApp());
 
@@ -77,17 +78,19 @@ class TodoFormState extends State<TodoForm> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   new TextFormField(
-                    autofocus: true,
-                    validator: (value) {
-                    if (value.isEmpty) {
-                      return "That is much todo about nothing!";
-                    }
-                  }, onSaved: (String todo) {
-                    this._data.todo = todo;
-                  }),
-                  DateTimePicker( // TODO: make dropdown with "Today" / "Tomorrow" / etc
-                  // more specific calendar icon to launch the DateTimePicker
-                  // preferences to set "EOD" midnight, 5pm etc
+                      autofocus: true,
+                      validator: (value) {
+                        if (value.isEmpty) {
+                          return "That is much todo about nothing!";
+                        }
+                      },
+                      onSaved: (String todo) {
+                        this._data.todo = todo;
+                      }),
+                  DateTimePicker(
+                    // TODO: make dropdown with "Today" / "Tomorrow" / etc
+                    // more specific calendar icon to launch the DateTimePicker
+                    // preferences to set "EOD" midnight, 5pm etc
                     labelText: 'Due Date',
                     selectedDate: _toDate,
                     selectedTime: _toTime,
@@ -129,13 +132,12 @@ class AddTasks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      appBar: new AppBar(
-        title: new Text("Let's Do This."),
-      ),
-      body: new SafeArea(
-        child: new TodoForm(),
-      )
-    );
+        appBar: new AppBar(
+          title: new Text("Let's Do This."),
+        ),
+        body: new SafeArea(
+          child: new TodoForm(),
+        ));
   }
 }
 
@@ -166,6 +168,31 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Duration diffDate(date) {
+    Duration difference = date.difference(DateTime.now());
+    return difference;
+  }
+
+  String formatDate(date) {
+    Duration difference = diffDate(date);
+    final hasPassed = difference.isNegative == true;
+    final suffix = hasPassed ? "ago" : "away";
+
+    final weeks =
+        difference.inDays.abs() > 7 ? (difference.inDays.abs() / 7).floor() : 0;
+    final weekString =
+        weeks == 0 ? "" : weeks > 1 ? "$weeks weeks" : "$weeks week";
+    final hours =
+        difference.inHours.abs() < 24 ? difference.inHours.abs().floor() : 0;
+    final hoursString =
+        hours == 0 ? "" : hours > 1 ? "$hours hours" : "$hours hour";
+    final days =
+        difference.inDays.abs() < 7 ? difference.inDays.abs().floor() : 0;
+    final dayString = days == 0 ? "" : days > 1 ? "$days days" : "$days day";
+
+    return "$weekString$dayString$hoursString $suffix";
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: add button to sort asc/desc
@@ -177,9 +204,11 @@ class _MyHomePageState extends State<MyHomePage> {
           onSelected: showMenuSelection,
           itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
                 new PopupMenuItem<String>(
-                    value: _menuValue1, child: new Text('Completed ($_completed)')),
+                    value: _menuValue1,
+                    child: new Text('Completed ($_completed)')),
                 new PopupMenuItem<String>(
-                    value: _menuValue2, child: new Text('In Progress ($_ongoing)')),
+                    value: _menuValue2,
+                    child: new Text('In Progress ($_ongoing)')),
               ],
         )
       ]),
@@ -209,9 +238,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 stream: stream(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) return const Text('Loading...');
-                    _completed = snapshot.data.documents.where((doc) => doc['completed']).length;
-                    _total = snapshot.data.documents.length;
-                    _ongoing = _total - _completed;
+                  _completed = snapshot.data.documents
+                      .where((doc) => doc['completed'])
+                      .length;
+                  _total = snapshot.data.documents.length;
+                  _ongoing = _total - _completed;
                   return new ListView(
                       children: snapshot.data.documents
                           .where((doc) => doc['completed'] == _showCompleted)
@@ -234,59 +265,62 @@ class _MyHomePageState extends State<MyHomePage> {
     // TODO: make ListTile subtitle date formatted better
     // TODO: conditional / color formatting
     final ThemeData theme = Theme.of(context);
-    return new Builder(
-      builder: (BuildContext context) {
-        return new Dismissible(
-        key: new Key(doc.documentID.toString()),
-        direction: DismissDirection.horizontal,
-        onDismissed: (DismissDirection direction) {
-          final String action = (direction == DismissDirection.endToStart) ? 'completed' : 'deleted';
-          Scaffold.of(context).showSnackBar(new SnackBar(
-          content: new Text('You $action the task!'),
-          action: new SnackBarAction(
-            label: 'UNDO',
-            onPressed: () { print('Please implement undo!'); } // TODO: implement undo
-          )
-        ));
-          if (direction == DismissDirection.endToStart) { // Completion
-            Firestore.instance.runTransaction((transaction) async {
-              DocumentSnapshot freshSnap = await transaction.get(doc.reference);
-              var payload = _showCompleted
-                  ? {
-                      'completed': false,
-                      'completed_at': null,
-                    }
-                  : {
-                      'completed': true,
-                      'completed_at': new DateTime.now(),
-                    };
-              await transaction.update(freshSnap.reference, payload);
-            });
-          }
-          if (direction == DismissDirection.startToEnd) {
-            // TODO: implement deletion / archiving
-            print('Deleted. Please implement!');
-          }
-        },
-        resizeDuration: null,
-        dismissThresholds: _dismissThresholds(),
-        background: new Container(
-        color: theme.errorColor,
-        child: const ListTile(
-          contentPadding: EdgeInsets.only(top:4.0, left: 16.0),
-          leading: const Icon(Icons.delete, color: Colors.white, size: 36.0)
-        )
-      ),
-      secondaryBackground: new Container(
-        color: theme.primaryColorLight,
-        child: const ListTile(
-          contentPadding: EdgeInsets.only(top:4.0, right: 16.0),
-          trailing: const Icon(Icons.check, color: Colors.white, size: 36.0)
-        )
-      ),
-        child: new ListTile(
-            title: new Text(doc['task']),
-            subtitle: new Text(doc['due'].toString())));
+    return new Builder(builder: (BuildContext context) {
+      return new Dismissible(
+          key: new Key(doc.documentID.toString()),
+          direction: DismissDirection.horizontal,
+          onDismissed: (DismissDirection direction) {
+            final String action = (direction == DismissDirection.endToStart)
+                ? 'completed'
+                : 'deleted';
+            Scaffold.of(context).showSnackBar(new SnackBar(
+                content: new Text('You $action the task!'),
+                action: new SnackBarAction(
+                    label: 'UNDO',
+                    onPressed: () {
+                      print('Please implement undo!');
+                    } // TODO: implement undo
+                    )));
+            if (direction == DismissDirection.endToStart) {
+              // Completion
+              Firestore.instance.runTransaction((transaction) async {
+                DocumentSnapshot freshSnap =
+                    await transaction.get(doc.reference);
+                var payload = _showCompleted
+                    ? {
+                        'completed': false,
+                        'completed_at': null,
+                      }
+                    : {
+                        'completed': true,
+                        'completed_at': new DateTime.now(),
+                      };
+                await transaction.update(freshSnap.reference, payload);
+              });
+            }
+            if (direction == DismissDirection.startToEnd) {
+              // TODO: implement deletion / archiving
+              print('Deleted. Please implement!');
+            }
+          },
+          resizeDuration: null,
+          dismissThresholds: _dismissThresholds(),
+          background: new Container(
+              color: theme.errorColor,
+              child: const ListTile(
+                  contentPadding: EdgeInsets.only(top: 4.0, left: 16.0),
+                  leading: const Icon(Icons.delete,
+                      color: Colors.white, size: 36.0))),
+          secondaryBackground: new Container(
+              color: theme.primaryColorLight,
+              child: const ListTile(
+                  contentPadding: EdgeInsets.only(top: 4.0, right: 16.0),
+                  trailing: const Icon(Icons.check,
+                      color: Colors.white, size: 36.0))),
+          child: new ListTile(
+              title: new Text(doc['task']),
+              subtitle: new Text(
+                  "${formatDate(doc['due'])}")));
     });
   }
 
@@ -306,8 +340,8 @@ class _MyHomePageState extends State<MyHomePage> {
             }),
         new ListTile(
             leading: const Icon(Icons.ac_unit),
-            title: new Text(
-                _showCompleted == true ? 'In Progress' : 'Completed'),
+            title:
+                new Text(_showCompleted == true ? 'In Progress' : 'Completed'),
             onTap: () {
               setState(() {
                 _showCompleted = !_showCompleted;
