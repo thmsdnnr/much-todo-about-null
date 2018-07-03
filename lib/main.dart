@@ -151,8 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
   var _completed;
   var _total;
   var _ongoing;
-  var _filterByTime = false;
-  var _timeFilterDuration;
+  var _timeFilterDuration = "Today";
 
   final String _menuValue1 = 'Completed';
   final String _menuValue2 = 'Ongoing';
@@ -160,6 +159,18 @@ class _MyHomePageState extends State<MyHomePage> {
   final String _duration1 = 'Today';
   final String _duration2 = 'This Week';
   final String _duration3 = 'Past Due';
+
+  static Query baseQuery = Firestore.instance
+    .collection('todos')
+    .orderBy("due", descending: false);
+
+  Map<String, Query> _durationToQuery = {
+    "Today": baseQuery.where("due", isGreaterThanOrEqualTo: DateTime.now())
+      .where("due", isLessThanOrEqualTo: DateTime.now().add(Duration(days: 1))),
+    "This Week": baseQuery.where("due", isGreaterThanOrEqualTo: DateTime.now())
+      .where("due", isLessThanOrEqualTo: DateTime.now().add(Duration(days: 7))),
+    "Past Due": baseQuery.where("due", isLessThanOrEqualTo: DateTime.now()),
+  };
 
   void showMenuSelection(String value) {
     if (<String>[_menuValue1, _menuValue2].contains(value)) if (value ==
@@ -172,10 +183,8 @@ class _MyHomePageState extends State<MyHomePage> {
         _showCompleted = false;
       });
     }
-    if (<String>[_duration1, _duration2, _duration3].contains(value)) if (value ==
-    "Today") {
+    if (<String>[_duration1, _duration2, _duration3].contains(value)) {
       setState(() {
-        _filterByTime = true;
         _timeFilterDuration = value;
       });
     }
@@ -194,23 +203,27 @@ class _MyHomePageState extends State<MyHomePage> {
     final weeks =
         difference.inDays.abs() > 7 ? (difference.inDays.abs() / 7).floor() : 0;
     final weekString =
-        weeks == 0 ? "" : weeks > 1 ? "$weeks weeks" : "$weeks week";
+        weeks == 0 ? "" : weeks > 1 ? "$weeks weeks" : weeks > 0 ? "$weeks week" : "";
     final hours =
         difference.inHours.abs() < 24 ? difference.inHours.abs().floor() : 0;
     final hoursString =
-        hours == 0 ? "" : hours > 1 ? "$hours hours" : "$hours hour";
+        hours == 0 ? "" : hours > 1 ? "$hours hours" : hours > 0 ? "$hours hour" : "";
+    final minutes =
+        difference.inSeconds.abs() < 3600 ? (difference.inSeconds.abs()/60).floor() : 0;
+    final minutesString =
+        hours !=0 && hours > 1 ? "" : minutes > 1 ? "$minutes minutes" : minutes > 0 ? "$minutes minute" : "";
     final days =
         difference.inDays.abs() < 7 ? difference.inDays.abs().floor() : 0;
-    final dayString = days == 0 ? "" : days > 1 ? "$days days" : "$days day";
+    final dayString = days == 0 ? "" : days > 1 ? "$days days" : days > 0 ? "$days day" : "";
 
-    return "$weekString$dayString$hoursString $suffix";
+    return "$weekString$dayString$hoursString$minutesString $suffix";
   }
 
   @override
   Widget build(BuildContext context) {
     // TODO: add button to sort asc/desc
     // TODO: add button to filter ()
-    var _title = _showCompleted ? "stuff i've done" : "stuff i've to do";
+    var _title = _showCompleted ? "DONE: $_timeFilterDuration" : "DOING: $_timeFilterDuration";
     return new Scaffold(
       appBar: new AppBar(title: new Text(_title), actions: <Widget>[
         PopupMenuButton<String>(
@@ -219,13 +232,13 @@ class _MyHomePageState extends State<MyHomePage> {
           itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
                 PopupMenuItem<String>(
                     value: _duration1,
-                    child: Text('Today ($_completed)')),
+                    child: Text('Today')),
                 PopupMenuItem<String>(
                     value: _duration2,
-                    child: Text('This Week ($_ongoing)')),
+                    child: Text('This Week')),
                 PopupMenuItem<String>(
                     value: _duration3,
-                    child: Text('Past due ($_ongoing)')),
+                    child: Text('Past Due')),
               ],
         ),
         PopupMenuButton<String>(
@@ -251,15 +264,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   grabTodos() {
-    return Firestore.instance
-        .collection('todos')
-        .orderBy("due", descending: false)
-        .snapshots();
+    return _durationToQuery[_timeFilterDuration].snapshots();
   }
 
   buildTodoList(stream) {
-    // TODO: toggle dividers for rows
-    // TODO: day view
     return new Center(
         child: GestureDetector(
             child: new StreamBuilder<QuerySnapshot>(
@@ -290,7 +298,6 @@ class _MyHomePageState extends State<MyHomePage> {
     // TODO: make build Todo Row have ability to show child items
     // TODO: chips
     // TODO: progress bar
-    // TODO: make ListTile subtitle date formatted better
     // TODO: conditional / color formatting
     final ThemeData theme = Theme.of(context);
     return new Builder(builder: (BuildContext context) {
