@@ -148,6 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
   // TODO: add todo list export / e-mail reminders / text reminders
   // TODO: system notifications https://pub.dartlang.org/packages/firebase_messaging
   var _showCompleted = false;
+  var _showDeleted = false;
   var _completed;
   var _total;
   var _ongoing;
@@ -252,18 +253,16 @@ class _MyHomePageState extends State<MyHomePage> {
           onSelected: showMenuSelection,
           itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
                 PopupMenuItem<String>(
-                    value: _menuValue1,
-                    child: Text('Completed ($_completed)')),
+                    value: _menuValue1, child: Text('Completed ($_completed)')),
                 PopupMenuItem<String>(
-                    value: _menuValue2,
-                    child: Text('In Progress ($_ongoing)')),
+                    value: _menuValue2, child: Text('In Progress ($_ongoing)')),
               ],
         )
       ]),
       body: buildTodoList(grabTodos),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(context,
-            MaterialPageRoute(builder: (context) => AddTasks())),
+        onPressed: () => Navigator.push(
+            context, MaterialPageRoute(builder: (context) => AddTasks())),
         tooltip: 'Add Todo',
         child: Icon(Icons.add),
       ),
@@ -289,6 +288,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   return ListView(
                       children: snapshot.data.documents
                           .where((doc) => doc['completed'] == _showCompleted)
+                          .where((doc) => _showDeleted
+                              ? doc['deletedAt'] != null
+                              : doc['deletedAt'] == null)
                           .map<Widget>((DocumentSnapshot document) {
                     return buildTodoRow(document);
                   }).toList());
@@ -319,9 +321,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 content: Text('You $action the task!'),
                 duration: Duration(seconds: 5),
                 action: SnackBarAction(
-                    label: 'UNDO',
-                    onPressed: () => _undoAction(),
-                    )));
+                  label: 'UNDO',
+                  onPressed: () => _undoAction(),
+                )));
             if (direction == DismissDirection.endToStart) {
               // Completion
               Firestore.instance.runTransaction((transaction) async {
@@ -359,10 +361,29 @@ class _MyHomePageState extends State<MyHomePage> {
               Firestore.instance.runTransaction((transaction) async {
                 DocumentSnapshot freshSnap =
                     await transaction.get(doc.reference);
-                await transaction
-                    .update(freshSnap.reference, {'deleted': true});
+                var payload = _showDeleted
+                    ? {
+                        'deletedAt': null,
+                      }
+                    : {
+                        'deletedAt': DateTime.now(),
+                      };
+                await transaction.update(freshSnap.reference, payload);
               });
-              print('Deleted. Please implement!');
+              _undoAction = () async {
+                Firestore.instance.runTransaction((transaction) async {
+                  DocumentSnapshot freshSnap =
+                      await transaction.get(doc.reference);
+                  var payload = _showDeleted
+                      ? {
+                          'deletedAt': DateTime.now(),
+                        }
+                      : {
+                          'deletedAt': null,
+                        };
+                  await transaction.update(freshSnap.reference, payload);
+                });
+              };
             }
           },
           resizeDuration: null,
@@ -396,13 +417,12 @@ class _MyHomePageState extends State<MyHomePage> {
             title: const Text('Add Todo'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => AddTasks()));
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => AddTasks()));
             }),
         ListTile(
             leading: const Icon(Icons.ac_unit),
-            title:
-                Text(_showCompleted == true ? 'In Progress' : 'Completed'),
+            title: Text(_showCompleted == true ? 'In Progress' : 'Completed'),
             onTap: () {
               setState(() {
                 _showCompleted = !_showCompleted;
