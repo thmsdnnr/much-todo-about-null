@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:much_todo/datepicker.dart';
+import 'package:much_todo/editable_list_tile.dart';
 import 'package:much_todo/helpers.dart';
 
 void main() => runApp(MyApp());
@@ -41,6 +42,12 @@ class _TodoData {
   bool completed = false;
   DateTime utcDateTime;
   serialize() => {'task': todo, 'completed': completed, 'due': utcDateTime};
+}
+
+class _SubgoalData {
+  String subgoal = '';
+  bool completed = false;
+  int order = 0;  
 }
 
 class TodoFormState extends State<TodoForm> {
@@ -150,6 +157,11 @@ class EditTask extends StatefulWidget {
 }
 
 class _EditTaskState extends State<EditTask> {
+  // TODO: hold and drag to rearrange tasks
+  // TODO: store ordinal task index
+  // TODO: support task deletion
+  // TODO: link tasks to todos
+  // TODO: counter for # of complete tasks
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,7 +175,16 @@ class _EditTaskState extends State<EditTask> {
           ],
         ),
         body: SafeArea(
-          child: Text(formatDate(widget.task['due'])),
+          child: Column(
+            children: <Widget>[
+              EditableListTile(
+                title: "Add A Subgoal",
+                icon: Icons.add_box,
+                clearOnEdit: true,
+                valueChangeHandler: (value) => print("new value: $value"),
+              )
+            ],
+          )
         ));
   }
 }
