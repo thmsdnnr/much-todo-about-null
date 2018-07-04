@@ -154,6 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
   var _ongoing;
   var _timeFilterDuration = "Today";
   var _undoAction;
+  var _discreteValue;
 
   final String _menuValue1 = 'Completed';
   final String _menuValue2 = 'Ongoing';
@@ -313,79 +314,8 @@ class _MyHomePageState extends State<MyHomePage> {
       return Dismissible(
           key: Key(doc.documentID.toString()),
           direction: DismissDirection.horizontal,
-          onDismissed: (DismissDirection direction) {
-            final String action = (direction == DismissDirection.endToStart)
-                ? 'completed'
-                : 'deleted';
-            Scaffold.of(context).showSnackBar(SnackBar(
-                content: Text('You $action the task!'),
-                duration: Duration(seconds: 5),
-                action: SnackBarAction(
-                  label: 'UNDO',
-                  onPressed: () => _undoAction(),
-                )));
-            if (direction == DismissDirection.endToStart) {
-              // Completion
-              Firestore.instance.runTransaction((transaction) async {
-                DocumentSnapshot freshSnap =
-                    await transaction.get(doc.reference);
-                var payload = _showCompleted
-                    ? {
-                        'completed': false,
-                        'completed_at': null,
-                      }
-                    : {
-                        'completed': true,
-                        'completed_at': DateTime.now(),
-                      };
-                await transaction.update(freshSnap.reference, payload);
-              });
-              _undoAction = () async {
-                Firestore.instance.runTransaction((transaction) async {
-                  DocumentSnapshot freshSnap =
-                      await transaction.get(doc.reference);
-                  var payload = _showCompleted
-                      ? {
-                          'completed': true,
-                        }
-                      : {
-                          'completed': false,
-                          'completed_at': null,
-                        };
-                  await transaction.update(freshSnap.reference, payload);
-                });
-              };
-            }
-            if (direction == DismissDirection.startToEnd) {
-              // Deletion
-              Firestore.instance.runTransaction((transaction) async {
-                DocumentSnapshot freshSnap =
-                    await transaction.get(doc.reference);
-                var payload = _showDeleted
-                    ? {
-                        'deletedAt': null,
-                      }
-                    : {
-                        'deletedAt': DateTime.now(),
-                      };
-                await transaction.update(freshSnap.reference, payload);
-              });
-              _undoAction = () async {
-                Firestore.instance.runTransaction((transaction) async {
-                  DocumentSnapshot freshSnap =
-                      await transaction.get(doc.reference);
-                  var payload = _showDeleted
-                      ? {
-                          'deletedAt': DateTime.now(),
-                        }
-                      : {
-                          'deletedAt': null,
-                        };
-                  await transaction.update(freshSnap.reference, payload);
-                });
-              };
-            }
-          },
+          onDismissed: (direction) =>
+              _handleTodoItemDismiss(direction, doc, context),
           resizeDuration: null,
           dismissThresholds: _dismissThresholds(),
           background: Container(
@@ -401,9 +331,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   trailing: const Icon(Icons.check,
                       color: Colors.white, size: 36.0))),
           child: ListTile(
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => drillDown(doc))),
               title: Text(doc['task']),
               subtitle: Text("${formatDate(doc['due'])}")));
     });
+  }
+
+  drillDown(doc) {
+    return Scaffold(
+        appBar: AppBar(title: Text(doc['task'])),
+        body: Container(
+          height: 250.0,
+          margin: EdgeInsets.all(36.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Text("${formatDate(doc['due'])}"),
+          ),
+      );
   }
 
   buildDrawer() {
@@ -435,5 +381,74 @@ class _MyHomePageState extends State<MyHomePage> {
         )
       ]),
     )));
+  }
+
+  _handleTodoItemDismiss(DismissDirection direction, doc, context) {
+    final String action =
+        (direction == DismissDirection.endToStart) ? 'completed' : 'deleted';
+    Scaffold.of(context).showSnackBar(SnackBar(
+        content: Text('You $action the task!'),
+        duration: Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: () => _undoAction(),
+        )));
+    if (direction == DismissDirection.endToStart) {
+      // Completion
+      Firestore.instance.runTransaction((transaction) async {
+        DocumentSnapshot freshSnap = await transaction.get(doc.reference);
+        var payload = _showCompleted
+            ? {
+                'completed': false,
+                'completed_at': null,
+              }
+            : {
+                'completed': true,
+                'completed_at': DateTime.now(),
+              };
+        await transaction.update(freshSnap.reference, payload);
+      });
+      _undoAction = () async {
+        Firestore.instance.runTransaction((transaction) async {
+          DocumentSnapshot freshSnap = await transaction.get(doc.reference);
+          var payload = _showCompleted
+              ? {
+                  'completed': true,
+                }
+              : {
+                  'completed': false,
+                  'completed_at': null,
+                };
+          await transaction.update(freshSnap.reference, payload);
+        });
+      };
+    }
+    if (direction == DismissDirection.startToEnd) {
+      // Deletion
+      Firestore.instance.runTransaction((transaction) async {
+        DocumentSnapshot freshSnap = await transaction.get(doc.reference);
+        var payload = _showDeleted
+            ? {
+                'deletedAt': null,
+              }
+            : {
+                'deletedAt': DateTime.now(),
+              };
+        await transaction.update(freshSnap.reference, payload);
+      });
+      _undoAction = () async {
+        Firestore.instance.runTransaction((transaction) async {
+          DocumentSnapshot freshSnap = await transaction.get(doc.reference);
+          var payload = _showDeleted
+              ? {
+                  'deletedAt': DateTime.now(),
+                }
+              : {
+                  'deletedAt': null,
+                };
+          await transaction.update(freshSnap.reference, payload);
+        });
+      };
+    }
   }
 }
