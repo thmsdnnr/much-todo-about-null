@@ -152,6 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
   var _total;
   var _ongoing;
   var _timeFilterDuration = "Today";
+  var _undoAction;
 
   final String _menuValue1 = 'Completed';
   final String _menuValue2 = 'Ongoing';
@@ -160,15 +161,18 @@ class _MyHomePageState extends State<MyHomePage> {
   final String _duration2 = 'This Week';
   final String _duration3 = 'Past Due';
 
-  static Query baseQuery = Firestore.instance
-    .collection('todos')
-    .orderBy("due", descending: false);
+  static Query baseQuery =
+      Firestore.instance.collection('todos').orderBy("due", descending: false);
 
   Map<String, Query> _durationToQuery = {
-    "Today": baseQuery.where("due", isGreaterThanOrEqualTo: DateTime.now())
-      .where("due", isLessThanOrEqualTo: DateTime.now().add(Duration(days: 1))),
-    "This Week": baseQuery.where("due", isGreaterThanOrEqualTo: DateTime.now())
-      .where("due", isLessThanOrEqualTo: DateTime.now().add(Duration(days: 7))),
+    "Today": baseQuery
+        .where("due", isGreaterThanOrEqualTo: DateTime.now())
+        .where("due",
+            isLessThanOrEqualTo: DateTime.now().add(Duration(days: 1))),
+    "This Week": baseQuery
+        .where("due", isGreaterThanOrEqualTo: DateTime.now())
+        .where("due",
+            isLessThanOrEqualTo: DateTime.now().add(Duration(days: 7))),
     "Past Due": baseQuery.where("due", isLessThanOrEqualTo: DateTime.now()),
   };
 
@@ -202,19 +206,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final weeks =
         difference.inDays.abs() > 7 ? (difference.inDays.abs() / 7).floor() : 0;
-    final weekString =
-        weeks == 0 ? "" : weeks > 1 ? "$weeks weeks" : weeks > 0 ? "$weeks week" : "";
+    final weekString = weeks == 0
+        ? ""
+        : weeks > 1 ? "$weeks weeks" : weeks > 0 ? "$weeks week" : "";
     final hours =
         difference.inHours.abs() < 24 ? difference.inHours.abs().floor() : 0;
-    final hoursString =
-        hours == 0 ? "" : hours > 1 ? "$hours hours" : hours > 0 ? "$hours hour" : "";
-    final minutes =
-        difference.inSeconds.abs() < 3600 ? (difference.inSeconds.abs()/60).floor() : 0;
-    final minutesString =
-        hours !=0 && hours > 1 ? "" : minutes > 1 ? "$minutes minutes" : minutes > 0 ? "$minutes minute" : "";
+    final hoursString = hours == 0
+        ? ""
+        : hours > 1 ? "$hours hours" : hours > 0 ? "$hours hour" : "";
+    final minutes = difference.inSeconds.abs() < 3600
+        ? (difference.inSeconds.abs() / 60).floor()
+        : 0;
+    final minutesString = hours != 0 && hours > 1
+        ? ""
+        : minutes > 1
+            ? "$minutes minutes"
+            : minutes > 0 ? "$minutes minute" : "";
     final days =
         difference.inDays.abs() < 7 ? difference.inDays.abs().floor() : 0;
-    final dayString = days == 0 ? "" : days > 1 ? "$days days" : days > 0 ? "$days day" : "";
+    final dayString =
+        days == 0 ? "" : days > 1 ? "$days days" : days > 0 ? "$days day" : "";
 
     return "$weekString$dayString$hoursString$minutesString $suffix";
   }
@@ -222,23 +233,20 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     // TODO: add button to sort asc/desc
-    // TODO: add button to filter ()
-    var _title = _showCompleted ? "DONE: $_timeFilterDuration" : "DOING: $_timeFilterDuration";
+    var _title = _showCompleted
+        ? "DONE: $_timeFilterDuration"
+        : "DOING: $_timeFilterDuration";
     return new Scaffold(
       appBar: new AppBar(title: new Text(_title), actions: <Widget>[
         PopupMenuButton<String>(
           icon: Icon(Icons.filter_list),
           onSelected: showMenuSelection,
           itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
+                PopupMenuItem<String>(value: _duration1, child: Text('Today')),
                 PopupMenuItem<String>(
-                    value: _duration1,
-                    child: Text('Today')),
+                    value: _duration2, child: Text('This Week')),
                 PopupMenuItem<String>(
-                    value: _duration2,
-                    child: Text('This Week')),
-                PopupMenuItem<String>(
-                    value: _duration3,
-                    child: Text('Past Due')),
+                    value: _duration3, child: Text('Past Due')),
               ],
         ),
         PopupMenuButton<String>(
@@ -310,11 +318,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 : 'deleted';
             Scaffold.of(context).showSnackBar(new SnackBar(
                 content: new Text('You $action the task!'),
+                duration: Duration(seconds: 5),
                 action: new SnackBarAction(
                     label: 'UNDO',
                     onPressed: () {
-                      print('Please implement undo!');
-                    } // TODO: implement undo
+                      _undoAction();
+                    }
                     )));
             if (direction == DismissDirection.endToStart) {
               // Completion
@@ -332,9 +341,30 @@ class _MyHomePageState extends State<MyHomePage> {
                       };
                 await transaction.update(freshSnap.reference, payload);
               });
+              _undoAction = () async {
+                Firestore.instance.runTransaction((transaction) async {
+                  DocumentSnapshot freshSnap =
+                      await transaction.get(doc.reference);
+                  var payload = _showCompleted
+                      ? {
+                          'completed': true,
+                        }
+                      : {
+                          'completed': false,
+                          'completed_at': null,
+                        };
+                  await transaction.update(freshSnap.reference, payload);
+                });
+              };
             }
             if (direction == DismissDirection.startToEnd) {
-              // TODO: implement deletion / archiving
+              // Deletion
+              Firestore.instance.runTransaction((transaction) async {
+                DocumentSnapshot freshSnap =
+                    await transaction.get(doc.reference);
+                await transaction
+                    .update(freshSnap.reference, {'deleted': true});
+              });
               print('Deleted. Please implement!');
             }
           },
@@ -354,8 +384,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       color: Colors.white, size: 36.0))),
           child: new ListTile(
               title: new Text(doc['task']),
-              subtitle: new Text(
-                  "${formatDate(doc['due'])}")));
+              subtitle: new Text("${formatDate(doc['due'])}")));
     });
   }
 
