@@ -3,17 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:much_todo/datepicker.dart';
 import 'dart:core';
 
-void main() => runApp(new MyApp());
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       title: 'Much Todo',
-      theme: new ThemeData(
+      theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: new MyHomePage(title: 'about: nothing'),
+      home: MyHomePage(title: 'about: nothing'),
     );
   }
 }
@@ -23,13 +23,13 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => new _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class TodoForm extends StatefulWidget {
   @override
   TodoFormState createState() {
-    return new TodoFormState();
+    return TodoFormState();
   }
 }
 
@@ -43,16 +43,16 @@ class _TodoData {
 }
 
 class TodoFormState extends State<TodoForm> {
-  final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
-  _TodoData _data = new _TodoData();
-  DateTime _toDate = new DateTime.now();
-  TimeOfDay _toTime = const TimeOfDay(hour: 7, minute: 28);
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  _TodoData _data = _TodoData();
+  DateTime _toDate = DateTime.now();
+  TimeOfDay _toTime = TimeOfDay(hour: 7, minute: 28);
   bool isDue = false;
   void submit() {
     if (this._formKey.currentState.validate()) {
       _formKey.currentState.save();
       _formKey.currentState.reset();
-      _data.utcDateTime = new DateTime(_toDate.year, _toDate.month, _toDate.day,
+      _data.utcDateTime = DateTime(_toDate.year, _toDate.month, _toDate.day,
           _toTime.hour, _toTime.minute);
       Firestore.instance
           .collection('todos')
@@ -64,9 +64,9 @@ class TodoFormState extends State<TodoForm> {
 
   @override
   Widget build(BuildContext context) {
-    return new Form(
+    return Form(
         key: _formKey,
-        child: new Container(
+        child: Container(
             height: 250.0,
             margin: EdgeInsets.only(left: 16.0, right: 16.0),
             decoration: BoxDecoration(
@@ -77,7 +77,7 @@ class TodoFormState extends State<TodoForm> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  new TextFormField(
+                  TextFormField(
                       autofocus: true,
                       validator: (value) {
                         if (value.isEmpty) {
@@ -105,15 +105,15 @@ class TodoFormState extends State<TodoForm> {
                       });
                     },
                   ),
-                  new Padding(
+                  Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: new MaterialButton(
+                      child: MaterialButton(
                           height: 50.0,
                           minWidth: 400.0,
                           color: Theme.of(context).primaryColorDark,
-                          child: new Text(
+                          child: Text(
                             'do it!',
-                            style: new TextStyle(
+                            style: TextStyle(
                               color: Color(0xFFFFFFFF),
                               fontSize: 24.0,
                               letterSpacing: 1.0,
@@ -131,12 +131,12 @@ class TodoFormState extends State<TodoForm> {
 class AddTasks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return new Scaffold(
-        appBar: new AppBar(
-          title: new Text("Let's Do This."),
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text("Let's Do This."),
         ),
-        body: new SafeArea(
-          child: new TodoForm(),
+        body: SafeArea(
+          child: TodoForm(),
         ));
   }
 }
@@ -232,12 +232,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: add button to sort asc/desc
     var _title = _showCompleted
         ? "DONE: $_timeFilterDuration"
         : "DOING: $_timeFilterDuration";
-    return new Scaffold(
-      appBar: new AppBar(title: new Text(_title), actions: <Widget>[
+    return Scaffold(
+      appBar: AppBar(title: Text(_title), actions: <Widget>[
         PopupMenuButton<String>(
           icon: Icon(Icons.filter_list),
           onSelected: showMenuSelection,
@@ -252,21 +251,21 @@ class _MyHomePageState extends State<MyHomePage> {
         PopupMenuButton<String>(
           onSelected: showMenuSelection,
           itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
-                new PopupMenuItem<String>(
+                PopupMenuItem<String>(
                     value: _menuValue1,
-                    child: new Text('Completed ($_completed)')),
-                new PopupMenuItem<String>(
+                    child: Text('Completed ($_completed)')),
+                PopupMenuItem<String>(
                     value: _menuValue2,
-                    child: new Text('In Progress ($_ongoing)')),
+                    child: Text('In Progress ($_ongoing)')),
               ],
         )
       ]),
       body: buildTodoList(grabTodos),
-      floatingActionButton: new FloatingActionButton(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(context,
-            new MaterialPageRoute(builder: (context) => new AddTasks())),
+            MaterialPageRoute(builder: (context) => AddTasks())),
         tooltip: 'Add Todo',
-        child: new Icon(Icons.add),
+        child: Icon(Icons.add),
       ),
     );
   }
@@ -276,9 +275,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   buildTodoList(stream) {
-    return new Center(
+    return Center(
         child: GestureDetector(
-            child: new StreamBuilder<QuerySnapshot>(
+            child: StreamBuilder<QuerySnapshot>(
                 stream: stream(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) return const Text('Loading...');
@@ -287,7 +286,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       .length;
                   _total = snapshot.data.documents.length;
                   _ongoing = _total - _completed;
-                  return new ListView(
+                  return ListView(
                       children: snapshot.data.documents
                           .where((doc) => doc['completed'] == _showCompleted)
                           .map<Widget>((DocumentSnapshot document) {
@@ -297,7 +296,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Map<DismissDirection, double> _dismissThresholds() {
-    Map<DismissDirection, double> map = new Map<DismissDirection, double>();
+    Map<DismissDirection, double> map = Map<DismissDirection, double>();
     map.putIfAbsent(DismissDirection.horizontal, () => 0.3);
     return map;
   }
@@ -308,22 +307,20 @@ class _MyHomePageState extends State<MyHomePage> {
     // TODO: progress bar
     // TODO: conditional / color formatting
     final ThemeData theme = Theme.of(context);
-    return new Builder(builder: (BuildContext context) {
-      return new Dismissible(
-          key: new Key(doc.documentID.toString()),
+    return Builder(builder: (BuildContext context) {
+      return Dismissible(
+          key: Key(doc.documentID.toString()),
           direction: DismissDirection.horizontal,
           onDismissed: (DismissDirection direction) {
             final String action = (direction == DismissDirection.endToStart)
                 ? 'completed'
                 : 'deleted';
-            Scaffold.of(context).showSnackBar(new SnackBar(
-                content: new Text('You $action the task!'),
+            Scaffold.of(context).showSnackBar(SnackBar(
+                content: Text('You $action the task!'),
                 duration: Duration(seconds: 5),
-                action: new SnackBarAction(
+                action: SnackBarAction(
                     label: 'UNDO',
-                    onPressed: () {
-                      _undoAction();
-                    }
+                    onPressed: () => _undoAction(),
                     )));
             if (direction == DismissDirection.endToStart) {
               // Completion
@@ -337,7 +334,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       }
                     : {
                         'completed': true,
-                        'completed_at': new DateTime.now(),
+                        'completed_at': DateTime.now(),
                       };
                 await transaction.update(freshSnap.reference, payload);
               });
@@ -370,49 +367,49 @@ class _MyHomePageState extends State<MyHomePage> {
           },
           resizeDuration: null,
           dismissThresholds: _dismissThresholds(),
-          background: new Container(
+          background: Container(
               color: theme.errorColor,
               child: const ListTile(
                   contentPadding: EdgeInsets.only(top: 4.0, left: 16.0),
                   leading: const Icon(Icons.delete,
                       color: Colors.white, size: 36.0))),
-          secondaryBackground: new Container(
+          secondaryBackground: Container(
               color: theme.primaryColorLight,
               child: const ListTile(
                   contentPadding: EdgeInsets.only(top: 4.0, right: 16.0),
                   trailing: const Icon(Icons.check,
                       color: Colors.white, size: 36.0))),
-          child: new ListTile(
-              title: new Text(doc['task']),
-              subtitle: new Text("${formatDate(doc['due'])}")));
+          child: ListTile(
+              title: Text(doc['task']),
+              subtitle: Text("${formatDate(doc['due'])}")));
     });
   }
 
   buildDrawer() {
-    return new Drawer(
-        child: new SafeArea(
-            child: new Container(
+    return Drawer(
+        child: SafeArea(
+            child: Container(
       margin: const EdgeInsets.all(20.0),
-      child: new Column(children: <Widget>[
-        new ListTile(
+      child: Column(children: <Widget>[
+        ListTile(
             leading: const Icon(Icons.add_circle_outline),
             title: const Text('Add Todo'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
-                  new MaterialPageRoute(builder: (context) => new AddTasks()));
+                  MaterialPageRoute(builder: (context) => AddTasks()));
             }),
-        new ListTile(
+        ListTile(
             leading: const Icon(Icons.ac_unit),
             title:
-                new Text(_showCompleted == true ? 'In Progress' : 'Completed'),
+                Text(_showCompleted == true ? 'In Progress' : 'Completed'),
             onTap: () {
               setState(() {
                 _showCompleted = !_showCompleted;
               });
               Navigator.pop(context);
             }),
-        new ListTile(
+        ListTile(
           leading: const Icon(Icons.access_alarm),
           title: const Text('Set Reminders'),
         )
