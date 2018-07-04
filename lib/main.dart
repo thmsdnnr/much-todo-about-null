@@ -1,7 +1,10 @@
+import 'dart:core';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:much_todo/datepicker.dart';
-import 'dart:core';
+import 'package:much_todo/helpers.dart';
 
 void main() => runApp(MyApp());
 
@@ -36,8 +39,6 @@ class TodoForm extends StatefulWidget {
 class _TodoData {
   String todo = '';
   bool completed = false;
-  DateTime dueDate;
-  TimeOfDay dueTime;
   DateTime utcDateTime;
   serialize() => {'task': todo, 'completed': completed, 'due': utcDateTime};
 }
@@ -141,6 +142,32 @@ class AddTasks extends StatelessWidget {
   }
 }
 
+class EditTask extends StatefulWidget {
+  EditTask(this.task);
+  final task;
+  @override
+  _EditTaskState createState() => _EditTaskState();
+}
+
+class _EditTaskState extends State<EditTask> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.task['task']),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: () => print("edit"),
+            )
+          ],
+        ),
+        body: SafeArea(
+          child: Text(formatDate(widget.task['due'])),
+        ));
+  }
+}
+
 class _MyHomePageState extends State<MyHomePage> {
   // TODO: add "todo dashboard" to front page with a graph thing or whatevs
   // TODO: time estimates "that's ambitious", etc.
@@ -154,7 +181,6 @@ class _MyHomePageState extends State<MyHomePage> {
   var _ongoing;
   var _timeFilterDuration = "Today";
   var _undoAction;
-  var _discreteValue;
 
   final String _menuValue1 = 'Completed';
   final String _menuValue2 = 'Ongoing';
@@ -194,42 +220,6 @@ class _MyHomePageState extends State<MyHomePage> {
         _timeFilterDuration = value;
       });
     }
-  }
-
-  Duration diffDate(date) {
-    Duration difference = date.difference(DateTime.now());
-    return difference;
-  }
-
-  String formatDate(date) {
-    Duration difference = diffDate(date);
-    final hasPassed = difference.isNegative == true;
-    final suffix = hasPassed ? "ago" : "away";
-
-    final weeks =
-        difference.inDays.abs() > 7 ? (difference.inDays.abs() / 7).floor() : 0;
-    final weekString = weeks == 0
-        ? ""
-        : weeks > 1 ? "$weeks weeks" : weeks > 0 ? "$weeks week" : "";
-    final hours =
-        difference.inHours.abs() < 24 ? difference.inHours.abs().floor() : 0;
-    final hoursString = hours == 0
-        ? ""
-        : hours > 1 ? "$hours hours" : hours > 0 ? "$hours hour" : "";
-    final minutes = difference.inSeconds.abs() < 3600
-        ? (difference.inSeconds.abs() / 60).floor()
-        : 0;
-    final minutesString = hours != 0 && hours > 1
-        ? ""
-        : minutes > 1
-            ? "$minutes minutes"
-            : minutes > 0 ? "$minutes minute" : "";
-    final days =
-        difference.inDays.abs() < 7 ? difference.inDays.abs().floor() : 0;
-    final dayString =
-        days == 0 ? "" : days > 1 ? "$days days" : days > 0 ? "$days day" : "";
-
-    return "$weekString$dayString$hoursString$minutesString $suffix";
   }
 
   @override
@@ -332,24 +322,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       color: Colors.white, size: 36.0))),
           child: ListTile(
               onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => drillDown(doc))),
+                  MaterialPageRoute(builder: (context) => EditTask(doc))),
               title: Text(doc['task']),
               subtitle: Text("${formatDate(doc['due'])}")));
     });
-  }
-
-  drillDown(doc) {
-    return Scaffold(
-        appBar: AppBar(title: Text(doc['task'])),
-        body: Container(
-          height: 250.0,
-          margin: EdgeInsets.all(36.0),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Text("${formatDate(doc['due'])}"),
-          ),
-      );
   }
 
   buildDrawer() {
