@@ -60,6 +60,16 @@ class _EditableListTileState extends State<EditableListTile> {
                       ))),
             )
           : ListTile(
+              onTap: () {
+                setState(() {
+                  _isEditing = true;
+                  _currentValue = widget.subtitle;
+                  _textController.text = widget.subtitle;
+                  if (widget.clearOnEdit == true) {
+                    _textController.clear();
+                  }
+                });
+              },
               title: Text(widget.title),
               trailing: IconButton(
                   icon: Icon(widget.icon),

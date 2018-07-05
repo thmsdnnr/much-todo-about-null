@@ -47,7 +47,7 @@ class _TodoData {
 class _SubgoalData {
   String subgoal = '';
   bool completed = false;
-  int order = 0;  
+  int order = 0;
 }
 
 class TodoFormState extends State<TodoForm> {
@@ -162,6 +162,28 @@ class _EditTaskState extends State<EditTask> {
   // TODO: support task deletion
   // TODO: link tasks to todos
   // TODO: counter for # of complete tasks
+
+  List<String> _subgoals = [];
+
+  Widget getFreshAddItem() {
+    return EditableListTile(
+      title: "Add A Subgoal",
+      icon: Icons.add_box,
+      clearOnEdit: true,
+      valueChangeHandler: (value) => setState(() {
+            _subgoals.add(value);
+          }),
+    );
+  }
+
+  List<Widget> displaySubgoals(List<String> subgoals) {
+    return subgoals.map((sub) {
+      return ListTile(
+        title: Text(sub),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -175,17 +197,9 @@ class _EditTaskState extends State<EditTask> {
           ],
         ),
         body: SafeArea(
-          child: Column(
-            children: <Widget>[
-              EditableListTile(
-                title: "Add A Subgoal",
-                icon: Icons.add_box,
-                clearOnEdit: true,
-                valueChangeHandler: (value) => print("new value: $value"),
-              )
-            ],
-          )
-        ));
+            child: ListView(
+          children: displaySubgoals(_subgoals),
+        )));
   }
 }
 
