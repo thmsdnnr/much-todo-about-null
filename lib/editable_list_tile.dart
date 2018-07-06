@@ -32,7 +32,7 @@ class _EditableListTileState extends State<EditableListTile> {
     setState(() {
       _isEditing = false;
       String _newValue = _textController.text.toString();
-      if (_currentValue != _newValue) {
+      if (_currentValue != _newValue && _newValue != "") {
         widget.valueChangeHandler(_newValue);
       }
     });
@@ -42,7 +42,7 @@ class _EditableListTileState extends State<EditableListTile> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(left: 8.0, right: 8.0),
-      margin: EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0),
+      margin: EdgeInsets.only(top: 8.0, left: 24.0, right: 24.0),
       child: _isEditing
           ? Padding(
               padding: EdgeInsets.only(top: 12.0, bottom: 12.0),

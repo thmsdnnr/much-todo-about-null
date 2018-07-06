@@ -41,13 +41,21 @@ class _TodoData {
   String todo = '';
   bool completed = false;
   DateTime utcDateTime;
-  serialize() => {'task': todo, 'completed': completed, 'due': utcDateTime};
+  List<String> subGoals = [];
+  serialize() => {
+        'task': todo,
+        'completed': completed,
+        'due': utcDateTime,
+        'subGoalList': subGoals
+      };
 }
 
 class _SubgoalData {
   String subgoal = '';
   bool completed = false;
+  String todoRef = '';
   int order = 0;
+  serialize() => {'goal': subgoal, 'completed': completed, order: order};
 }
 
 class TodoFormState extends State<TodoForm> {
@@ -163,7 +171,7 @@ class _EditTaskState extends State<EditTask> {
   // TODO: link tasks to todos
   // TODO: counter for # of complete tasks
 
-  List<String> _subgoals = [];
+  List<String> _subgoals = ["one", "two", "three"];
 
   Widget getFreshAddItem() {
     return EditableListTile(
@@ -178,14 +186,18 @@ class _EditTaskState extends State<EditTask> {
 
   List<Widget> displaySubgoals(List<String> subgoals) {
     return subgoals.map((sub) {
-      return ListTile(
-        title: Text(sub),
+      return EditableListTile(
+        title: sub,
+        subtitle: sub,
+        clearOnEdit: false,
       );
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> itemList = displaySubgoals(_subgoals);
+    itemList.add(getFreshAddItem());
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.task['task']),
@@ -198,7 +210,7 @@ class _EditTaskState extends State<EditTask> {
         ),
         body: SafeArea(
             child: ListView(
-          children: displaySubgoals(_subgoals),
+          children: itemList,
         )));
   }
 }
