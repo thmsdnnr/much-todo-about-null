@@ -190,6 +190,11 @@ class _EditTaskState extends State<EditTask> {
         title: sub,
         subtitle: sub,
         clearOnEdit: false,
+        valueChangeHandler: (string) {
+          setState(() {
+            // TODO: set string equal to list[idx] of subgoal
+          });
+        },
       );
     }).toList();
   }
