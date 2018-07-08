@@ -173,7 +173,6 @@ class _EditTaskState extends State<EditTask> {
   // TODO: hold and drag to rearrange tasks
   // TODO: store ordinal task index
   // TODO: support task deletion
-  // TODO: link tasks to todos
   // TODO: counter for # of complete tasks
 
   List<_SubgoalData> _subgoals = [];
@@ -370,7 +369,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   _completed = snapshot.data.documents
                       .where((doc) => doc['completed'])
                       .length;
-                  _total = snapshot.data.documents.length;
+                  _total = snapshot.data.documents
+                      .where((doc) => doc['deletedAt'] == null)
+                      .length;
                   _ongoing = _total - _completed;
                   return ListView(
                       children: snapshot.data.documents
