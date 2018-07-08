@@ -55,7 +55,11 @@ class _SubgoalData {
   final String subgoal;
   final bool completed;
   _SubgoalData({this.subgoal: '', this.completed: false});
-  serialize() => {'subgoal': subgoal, 'completed': completed};
+  serialize() => json.encode({'subgoal': subgoal, 'completed': completed});
+  Map<String, dynamic> toJson() => {
+        'subgoal': subgoal,
+        'completed': completed,
+      };
 }
 
 class TodoFormState extends State<TodoForm> {
@@ -173,16 +177,43 @@ class _EditTaskState extends State<EditTask> {
 
   List<_SubgoalData> _subgoals = [];
 
-  Widget getFreshAddItem() {
+  @override
+  initState() {
+    super.initState();
+    getSubGoals();
+  }
+
+  Widget getFreshAddItem(doc) {
     return EditableListTile(
       title: "Add A Subgoal",
       icon: Icons.add_box,
       clearOnEdit: true,
       valueChangeHandler: (value) => setState(() {
-            _subgoals.add(new _SubgoalData(subgoal: value));
-        }
-      ),
+            var newSubgoal = new _SubgoalData(subgoal: value);
+            _subgoals.add(newSubgoal);
+            Firestore.instance
+                .collection("todos")
+                .document(widget.documentId)
+                .collection("subgoals")
+                .add(newSubgoal.toJson());
+          }),
     );
+  }
+
+  void getSubGoals() async {
+    await Firestore.instance
+        .collection("todos")
+        .document(widget.documentId)
+        .collection("subgoals")
+        .getDocuments()
+        .then((data) {
+      setState(() {
+        _subgoals = data.documents
+            .map((doc) => new _SubgoalData(
+                subgoal: doc.data['subgoal'], completed: doc.data['completed']))
+            .toList();
+      });
+    });
   }
 
   List<Widget> displaySubgoals(List<_SubgoalData> subgoals) {
@@ -196,7 +227,6 @@ class _EditTaskState extends State<EditTask> {
             // int index = _subgoals.indexOf(sub);
             // _subgoals[index] = string;
             _subgoals.add(new _SubgoalData(subgoal: newSubgoal));
-            print(_subgoals.length);
           });
         },
       );
@@ -206,7 +236,7 @@ class _EditTaskState extends State<EditTask> {
   @override
   Widget build(BuildContext context) {
     List<Widget> itemList = displaySubgoals(_subgoals);
-    itemList.add(getFreshAddItem());
+    itemList.add(getFreshAddItem(widget.task));
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.task['task']),
