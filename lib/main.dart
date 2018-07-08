@@ -171,7 +171,7 @@ class _EditTaskState extends State<EditTask> {
   // TODO: link tasks to todos
   // TODO: counter for # of complete tasks
 
-  List<String> _subgoals = ["one", "two", "three"];
+  List<String> _subgoals = [];
 
   Widget getFreshAddItem() {
     return EditableListTile(
@@ -192,7 +192,8 @@ class _EditTaskState extends State<EditTask> {
         clearOnEdit: false,
         valueChangeHandler: (string) {
           setState(() {
-            // TODO: set string equal to list[idx] of subgoal
+            int index = _subgoals.indexOf(sub);
+            _subgoals[index] = string;
           });
         },
       );
