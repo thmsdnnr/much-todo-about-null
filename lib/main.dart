@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:core';
 
 import 'package:flutter/material.dart';
@@ -51,11 +52,10 @@ class _TodoData {
 }
 
 class _SubgoalData {
-  String subgoal = '';
-  bool completed = false;
-  String todoRef = '';
-  int order = 0;
-  serialize() => {'goal': subgoal, 'completed': completed, order: order};
+  final String subgoal;
+  final bool completed;
+  _SubgoalData({this.subgoal: '', this.completed: false});
+  serialize() => {'subgoal': subgoal, 'completed': completed};
 }
 
 class TodoFormState extends State<TodoForm> {
@@ -106,7 +106,6 @@ class TodoFormState extends State<TodoForm> {
                   DateTimePicker(
                     // TODO: make dropdown with "Today" / "Tomorrow" / etc
                     // more specific calendar icon to launch the DateTimePicker
-                    // preferences to set "EOD" midnight, 5pm etc
                     labelText: 'Due Date',
                     selectedDate: _toDate,
                     selectedTime: _toTime,
@@ -158,8 +157,9 @@ class AddTasks extends StatelessWidget {
 }
 
 class EditTask extends StatefulWidget {
-  EditTask(this.task);
+  EditTask(this.task, this.documentId);
   final task;
+  final documentId;
   @override
   _EditTaskState createState() => _EditTaskState();
 }
@@ -171,7 +171,7 @@ class _EditTaskState extends State<EditTask> {
   // TODO: link tasks to todos
   // TODO: counter for # of complete tasks
 
-  List<String> _subgoals = [];
+  List<_SubgoalData> _subgoals = [];
 
   Widget getFreshAddItem() {
     return EditableListTile(
@@ -179,21 +179,24 @@ class _EditTaskState extends State<EditTask> {
       icon: Icons.add_box,
       clearOnEdit: true,
       valueChangeHandler: (value) => setState(() {
-            _subgoals.add(value);
-          }),
+            _subgoals.add(new _SubgoalData(subgoal: value));
+        }
+      ),
     );
   }
 
-  List<Widget> displaySubgoals(List<String> subgoals) {
+  List<Widget> displaySubgoals(List<_SubgoalData> subgoals) {
     return subgoals.map((sub) {
       return EditableListTile(
-        title: sub,
-        subtitle: sub,
+        title: sub.subgoal,
+        subtitle: sub.subgoal,
         clearOnEdit: false,
-        valueChangeHandler: (string) {
+        valueChangeHandler: (newSubgoal) {
           setState(() {
-            int index = _subgoals.indexOf(sub);
-            _subgoals[index] = string;
+            // int index = _subgoals.indexOf(sub);
+            // _subgoals[index] = string;
+            _subgoals.add(new _SubgoalData(subgoal: newSubgoal));
+            print(_subgoals.length);
           });
         },
       );
@@ -374,8 +377,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   trailing: const Icon(Icons.check,
                       color: Colors.white, size: 36.0))),
           child: ListTile(
-              onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => EditTask(doc))),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => EditTask(doc, doc.documentID))),
               title: Text(doc['task']),
               subtitle: Text("${formatDate(doc['due'])}")));
     });
