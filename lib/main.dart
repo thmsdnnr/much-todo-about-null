@@ -54,7 +54,8 @@ class _TodoData {
 class _SubgoalData {
   final String subgoal;
   final bool completed;
-  _SubgoalData({this.subgoal: '', this.completed: false});
+  final DocumentReference ref;
+  _SubgoalData({this.subgoal: '', this.completed: false, this.ref});
   serialize() => json.encode({'subgoal': subgoal, 'completed': completed});
   Map<String, dynamic> toJson() => {
         'subgoal': subgoal,
@@ -210,33 +211,45 @@ class _EditTaskState extends State<EditTask> {
       setState(() {
         _subgoals = data.documents
             .map((doc) => new _SubgoalData(
-                subgoal: doc.data['subgoal'], completed: doc.data['completed']))
+                subgoal: doc.data['subgoal'],
+                completed: doc.data['completed'],
+                ref: doc.reference))
             .toList();
       });
     });
   }
 
-  List<Widget> displaySubgoals(List<_SubgoalData> subgoals) {
-    return subgoals.map((sub) {
-      return EditableListTile(
-        title: sub.subgoal,
-        subtitle: sub.subgoal,
-        clearOnEdit: false,
-        valueChangeHandler: (newSubgoal) {
-          setState(() {
-            // int index = _subgoals.indexOf(sub);
-            // _subgoals[index] = string;
-            _subgoals.add(new _SubgoalData(subgoal: newSubgoal));
-          });
-        },
-      );
-    }).toList();
+  ListView getTheList(List<_SubgoalData> subgoals) {
+    return ListView.builder(
+        itemCount: subgoals.length,
+        itemBuilder: (_, int index) {
+          final sub = _subgoals[index];
+          return EditableListTile(
+            title: sub.subgoal,
+            subtitle: sub.subgoal,
+            clearOnEdit: false,
+            valueChangeHandler: (newSubgoal) {
+              setState(() {
+                DocumentReference ref = sub.ref;
+                _SubgoalData theNewSubgoal =
+                    new _SubgoalData(subgoal: newSubgoal);
+                _subgoals[index] = theNewSubgoal;
+                Firestore.instance
+                    .collection("todos")
+                    .document(widget.documentId)
+                    .collection("subgoals")
+                    .document(ref.documentID)
+                    .updateData(theNewSubgoal.toJson());
+              });
+            },
+          );
+        });
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> itemList = displaySubgoals(_subgoals);
-    itemList.add(getFreshAddItem(widget.task));
+    // List<Widget> itemList = displaySubgoals(_subgoals);
+    // itemList.add(getFreshAddItem(widget.task));
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.task['task']),
@@ -247,10 +260,7 @@ class _EditTaskState extends State<EditTask> {
             )
           ],
         ),
-        body: SafeArea(
-            child: ListView(
-          children: itemList,
-        )));
+        body: SafeArea(child: getTheList(_subgoals)));
   }
 }
 
