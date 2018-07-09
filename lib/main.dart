@@ -54,8 +54,13 @@ class _TodoData {
 class _SubgoalData {
   final String subgoal;
   final bool completed;
+  final bool isBlankSlate;
   final DocumentReference ref;
-  _SubgoalData({this.subgoal: '', this.completed: false, this.ref});
+  _SubgoalData(
+      {this.subgoal: '',
+      this.completed: false,
+      this.isBlankSlate: false,
+      this.ref});
   serialize() => json.encode({'subgoal': subgoal, 'completed': completed});
   Map<String, dynamic> toJson() => {
         'subgoal': subgoal,
@@ -183,19 +188,21 @@ class _EditTaskState extends State<EditTask> {
     getSubGoals();
   }
 
-  Widget getFreshAddItem(doc) {
+  Widget getFreshAddItem() {
     return EditableListTile(
       title: "Add A Subgoal",
       icon: Icons.add_box,
       clearOnEdit: true,
       valueChangeHandler: (value) => setState(() {
             var newSubgoal = new _SubgoalData(subgoal: value);
+            _subgoals.removeLast();
             _subgoals.add(newSubgoal);
             Firestore.instance
                 .collection("todos")
                 .document(widget.documentId)
                 .collection("subgoals")
                 .add(newSubgoal.toJson());
+            _subgoals.add(new _SubgoalData(isBlankSlate: true));
           }),
     );
   }
@@ -210,10 +217,12 @@ class _EditTaskState extends State<EditTask> {
       setState(() {
         _subgoals = data.documents
             .map((doc) => new _SubgoalData(
-                subgoal: doc.data['subgoal'],
-                completed: doc.data['completed'],
-                ref: doc.reference))
+                  subgoal: doc.data['subgoal'],
+                  completed: doc.data['completed'],
+                  ref: doc.reference,
+                ))
             .toList();
+        _subgoals.add(new _SubgoalData(isBlankSlate: true));
       });
     });
   }
@@ -223,25 +232,27 @@ class _EditTaskState extends State<EditTask> {
         itemCount: subgoals.length,
         itemBuilder: (_, int index) {
           final sub = _subgoals[index];
-          return EditableListTile(
-            title: sub.subgoal,
-            subtitle: sub.subgoal,
-            clearOnEdit: false,
-            valueChangeHandler: (newSubgoal) {
-              setState(() {
-                DocumentReference ref = sub.ref;
-                _SubgoalData theNewSubgoal =
-                    new _SubgoalData(subgoal: newSubgoal);
-                _subgoals[index] = theNewSubgoal;
-                Firestore.instance
-                    .collection("todos")
-                    .document(widget.documentId)
-                    .collection("subgoals")
-                    .document(ref.documentID)
-                    .updateData(theNewSubgoal.toJson());
-              });
-            },
-          );
+          return sub.isBlankSlate
+              ? getFreshAddItem()
+              : EditableListTile(
+                  title: sub.subgoal,
+                  subtitle: sub.subgoal,
+                  clearOnEdit: false,
+                  valueChangeHandler: (newSubgoal) {
+                    setState(() {
+                      DocumentReference ref = sub.ref;
+                      _SubgoalData theNewSubgoal =
+                          new _SubgoalData(subgoal: newSubgoal);
+                      _subgoals[index] = theNewSubgoal;
+                      Firestore.instance
+                          .collection("todos")
+                          .document(widget.documentId)
+                          .collection("subgoals")
+                          .document(ref.documentID)
+                          .updateData(theNewSubgoal.toJson());
+                    });
+                  },
+                );
         });
   }
 
