@@ -9,6 +9,7 @@ class EditableListTile extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.clearOnEdit = false,
     this.icon = Icons.edit,
+    this.isEditable,
   });
 
   final title;
@@ -18,6 +19,7 @@ class EditableListTile extends StatefulWidget {
   final keyboardType;
   final clearOnEdit;
   final icon;
+  final isEditable;
 
   @override
   _EditableListTileState createState() => _EditableListTileState();
@@ -41,49 +43,84 @@ class _EditableListTileState extends State<EditableListTile> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(left: 8.0, right: 8.0),
-      margin: EdgeInsets.only(top: 8.0, left: 24.0, right: 24.0),
-      child: _isEditing
-          ? Padding(
-              padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
-              child: TextField(
-                  autofocus: true,
-                  keyboardType: widget.keyboardType,
-                  onSubmitted: (string) => handleEditComplete(),
-                  controller: _textController,
-                  decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText: widget.labelText,
-                      suffixIcon: GestureDetector(
-                        child: Icon(Icons.done),
-                        onTap: () => handleEditComplete(),
-                      ))),
-            )
-          : ListTile(
-              onTap: () {
-                setState(() {
-                  _isEditing = true;
-                  _currentValue = widget.subtitle;
-                  _textController.text = widget.subtitle;
-                  if (widget.clearOnEdit == true) {
-                    _textController.clear();
-                  }
-                });
-              },
-              title: Text(widget.title),
-              trailing: IconButton(
-                  icon: Icon(widget.icon),
-                  onPressed: () {
-                    setState(() {
-                      _isEditing = true;
-                      _currentValue = widget.subtitle;
-                      _textController.text = widget.subtitle;
-                      if (widget.clearOnEdit == true) {
-                        _textController.clear();
-                      }
-                    });
-                  }),
-            ),
+        padding: EdgeInsets.only(left: 8.0, right: 8.0),
+        margin: EdgeInsets.only(top: 8.0, left: 24.0, right: 24.0),
+        child: widget.isEditable == true
+            ? _isEditing == true ? editingAcitve() : editingReadOnly()
+            : displayOnly());
+  }
+
+  Widget editingAcitve() {
+    return Padding(
+      padding: EdgeInsets.only(top: 12.0, bottom: 12.0),
+      child: TextField(
+          autofocus: true,
+          keyboardType: widget.keyboardType,
+          onSubmitted: (string) => handleEditComplete(),
+          controller: _textController,
+          decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: widget.labelText,
+              suffixIcon: GestureDetector(
+                child: Icon(Icons.done),
+                onTap: () => handleEditComplete(),
+              ))),
+    );
+  }
+
+  Widget editingReadOnly() {
+    return ListTile(
+      onTap: () {
+        setState(() {
+          _isEditing = true;
+          _currentValue = widget.subtitle;
+          _textController.text = widget.subtitle;
+          if (widget.clearOnEdit == true) {
+            _textController.clear();
+          }
+        });
+      },
+      title: Text(widget.title),
+      trailing: IconButton(
+          icon: Icon(widget.icon),
+          onPressed: () {
+            setState(() {
+              _isEditing = true;
+              _currentValue = widget.subtitle;
+              _textController.text = widget.subtitle;
+              if (widget.clearOnEdit == true) {
+                _textController.clear();
+              }
+            });
+          }),
+    );
+  }
+
+  Widget displayOnly() {
+    return ListTile(
+      onTap: () {
+        setState(() {
+          _isEditing = true;
+          _currentValue = widget.subtitle;
+          _textController.text = widget.subtitle;
+          if (widget.clearOnEdit == true) {
+            _textController.clear();
+          }
+        });
+      },
+      title: Text(widget.title),
+      trailing: IconButton(
+          icon: Icon(Icons.style),
+          onPressed: () {
+            setState(() {
+              _isEditing = true;
+              _currentValue = widget.subtitle;
+              _textController.text = widget.subtitle;
+              if (widget.clearOnEdit == true) {
+                _textController.clear();
+              }
+            });
+          }),
     );
   }
 }

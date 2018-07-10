@@ -53,6 +53,7 @@ class _SubgoalData {
   final String subgoal;
   final bool completed;
   final bool isBlankSlate;
+  final int order;
   final DocumentReference ref;
   _SubgoalData(
       {this.subgoal: '',
@@ -63,6 +64,7 @@ class _SubgoalData {
   Map<String, dynamic> toJson() => {
         'subgoal': subgoal,
         'completed': completed,
+        'order': order,
       };
 }
 
@@ -179,6 +181,7 @@ class _EditTaskState extends State<EditTask> {
   // TODO: counter for # of complete tasks
 
   List<_SubgoalData> _subgoals = [];
+  bool _isEditing = false;
 
   @override
   initState() {
@@ -191,6 +194,7 @@ class _EditTaskState extends State<EditTask> {
       title: "Add A Subgoal",
       icon: Icons.add_box,
       clearOnEdit: true,
+      isEditable: _isEditing,
       valueChangeHandler: (value) => setState(() {
             var newSubgoal = new _SubgoalData(subgoal: value);
             _subgoals.removeLast();
@@ -233,24 +237,35 @@ class _EditTaskState extends State<EditTask> {
           final sub = _subgoals[index];
           return sub.isBlankSlate
               ? getFreshAddItem()
-              : EditableListTile(
-                  title: sub.subgoal,
-                  subtitle: sub.subgoal,
-                  clearOnEdit: false,
-                  valueChangeHandler: (newSubgoal) {
-                    setState(() {
-                      DocumentReference ref = sub.ref;
-                      _SubgoalData theNewSubgoal =
-                          new _SubgoalData(subgoal: newSubgoal);
-                      _subgoals[index] = theNewSubgoal;
-                      Firestore.instance
-                          .collection("todos")
-                          .document(widget.documentId)
-                          .collection("subgoals")
-                          .document(ref.documentID)
-                          .updateData(theNewSubgoal.toJson());
-                    });
-                  },
+              : ListTile(
+                  leading: _isEditing ? IconButton(
+                      icon: Icon(Icons.arrow_upward),
+                      onPressed: () {
+                        // Shift the item UP!
+                        // Swap index i with i-1
+
+                        print("s'up");
+                      }) : null,
+                  title: EditableListTile(
+                    title: sub.subgoal,
+                    subtitle: sub.subgoal,
+                    clearOnEdit: false,
+                    isEditable: _isEditing,
+                    valueChangeHandler: (newSubgoal) {
+                      setState(() {
+                        DocumentReference ref = sub.ref;
+                        _SubgoalData theNewSubgoal =
+                            new _SubgoalData(subgoal: newSubgoal);
+                        _subgoals[index] = theNewSubgoal;
+                        Firestore.instance
+                            .collection("todos")
+                            .document(widget.documentId)
+                            .collection("subgoals")
+                            .document(ref.documentID)
+                            .updateData(theNewSubgoal.toJson());
+                      });
+                    },
+                  ),
                 );
         });
   }
@@ -264,8 +279,12 @@ class _EditTaskState extends State<EditTask> {
           title: Text(widget.task['task']),
           actions: <Widget>[
             IconButton(
-              icon: Icon(Icons.edit),
-              onPressed: () => print("edit"),
+              icon: _isEditing
+                  ? Icon(Icons.subdirectory_arrow_left)
+                  : Icon(Icons.edit),
+              onPressed: () => setState(() {
+                    _isEditing = !_isEditing;
+                  }),
             )
           ],
         ),
