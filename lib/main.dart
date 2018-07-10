@@ -42,12 +42,10 @@ class _TodoData {
   String todo = '';
   bool completed = false;
   DateTime utcDateTime;
-  List<String> subGoals = [];
   serialize() => {
         'task': todo,
         'completed': completed,
         'due': utcDateTime,
-        'subGoalList': subGoals
       };
 }
 
@@ -215,6 +213,7 @@ class _EditTaskState extends State<EditTask> {
         .getDocuments()
         .then((data) {
       setState(() {
+        // print(data.documents.length);
         _subgoals = data.documents
             .map((doc) => new _SubgoalData(
                   subgoal: doc.data['subgoal'],
