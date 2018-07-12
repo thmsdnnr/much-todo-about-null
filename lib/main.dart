@@ -59,8 +59,9 @@ class _SubgoalData {
       {this.subgoal: '',
       this.completed: false,
       this.isBlankSlate: false,
+      this.order,
       this.ref});
-  serialize() => json.encode({'subgoal': subgoal, 'completed': completed});
+  // serialize() => json.encode({'subgoal': subgoal, 'completed': completed});
   Map<String, dynamic> toJson() => {
         'subgoal': subgoal,
         'completed': completed,
@@ -196,7 +197,10 @@ class _EditTaskState extends State<EditTask> {
       clearOnEdit: true,
       isEditable: _isEditing,
       valueChangeHandler: (value) => setState(() {
-            var newSubgoal = new _SubgoalData(subgoal: value);
+            var newSubgoal = _SubgoalData(
+              subgoal: value,
+              order: _subgoals.length,
+            );
             _subgoals.removeLast();
             _subgoals.add(newSubgoal);
             Firestore.instance
@@ -204,12 +208,21 @@ class _EditTaskState extends State<EditTask> {
                 .document(widget.documentId)
                 .collection("subgoals")
                 .add(newSubgoal.toJson());
-            _subgoals.add(new _SubgoalData(isBlankSlate: true));
+            _subgoals.add(_SubgoalData(isBlankSlate: true));
           }),
     );
   }
 
   void getSubGoals() async {
+    _SubgoalData fromDoc(doc) {
+      return _SubgoalData(
+        subgoal: doc.data['subgoal'],
+        completed: doc.data['completed'],
+        order: doc.data['order'],
+        ref: doc.reference,
+      );
+    }
+
     await Firestore.instance
         .collection("todos")
         .document(widget.documentId)
@@ -218,13 +231,8 @@ class _EditTaskState extends State<EditTask> {
         .then((data) {
       setState(() {
         // print(data.documents.length);
-        _subgoals = data.documents
-            .map((doc) => new _SubgoalData(
-                  subgoal: doc.data['subgoal'],
-                  completed: doc.data['completed'],
-                  ref: doc.reference,
-                ))
-            .toList();
+        _subgoals = data.documents.map((doc) => fromDoc(doc)).toList()
+          ..sort((a, b) => a.order.compareTo(b.order));
         _subgoals.add(new _SubgoalData(isBlankSlate: true));
       });
     });
@@ -238,24 +246,28 @@ class _EditTaskState extends State<EditTask> {
           return sub.isBlankSlate
               ? getFreshAddItem()
               : ListTile(
-                  leading: _isEditing ? IconButton(
-                      icon: Icon(Icons.arrow_upward),
-                      onPressed: () {
-                        // Shift the item UP!
-                        // Swap index i with i-1
+                  leading: _isEditing
+                      ? IconButton(
+                          icon: Icon(Icons.arrow_upward),
+                          onPressed: () {
+                            // Shift the item UP!
+                            // Swap index i with i-1
 
-                        print("s'up");
-                      }) : null,
+                            print("s'up");
+                          })
+                      : null,
                   title: EditableListTile(
                     title: sub.subgoal,
                     subtitle: sub.subgoal,
                     clearOnEdit: false,
                     isEditable: _isEditing,
-                    valueChangeHandler: (newSubgoal) {
+                    valueChangeHandler: (newSubgoal, index) {
                       setState(() {
                         DocumentReference ref = sub.ref;
                         _SubgoalData theNewSubgoal =
-                            new _SubgoalData(subgoal: newSubgoal);
+                            new _SubgoalData(subgoal: newSubgoal, order: index);
+                        print(theNewSubgoal.toString());
+                        print(theNewSubgoal.toJson());
                         _subgoals[index] = theNewSubgoal;
                         Firestore.instance
                             .collection("todos")
