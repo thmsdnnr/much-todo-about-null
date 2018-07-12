@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:core';
 
 import 'package:flutter/material.dart';
@@ -61,7 +60,6 @@ class _SubgoalData {
       this.isBlankSlate: false,
       this.order,
       this.ref});
-  // serialize() => json.encode({'subgoal': subgoal, 'completed': completed});
   Map<String, dynamic> toJson() => {
         'subgoal': subgoal,
         'completed': completed,
@@ -230,10 +228,9 @@ class _EditTaskState extends State<EditTask> {
         .getDocuments()
         .then((data) {
       setState(() {
-        // print(data.documents.length);
         _subgoals = data.documents.map((doc) => fromDoc(doc)).toList()
           ..sort((a, b) => a.order.compareTo(b.order));
-        _subgoals.add(new _SubgoalData(isBlankSlate: true));
+        _subgoals.add(_SubgoalData(isBlankSlate: true));
       });
     });
   }
