@@ -1,5 +1,5 @@
 import 'dart:core';
-
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -247,10 +247,20 @@ class _EditTaskState extends State<EditTask> {
                       ? IconButton(
                           icon: Icon(Icons.arrow_upward),
                           onPressed: () {
-                            // Shift the item UP!
-                            // Swap index i with i-1
-
-                            print("s'up");
+                            // TODO: perhaps just rewrite entire array for persistence
+                            Firestore.instance
+                              .collection("todos")
+                              .document(widget.documentId)
+                              .collection("subgoals")
+                              .document(sub.ref.documentID)
+                              .updateData({"order": min(0, index - 1)});
+                            setState(() {
+                              if (index > 0) {
+                                var temp = _subgoals[index-1];
+                                _subgoals[index-1] = _subgoals[index];
+                                _subgoals[index] = temp;
+                              }
+                            });
                           })
                       : null,
                   title: EditableListTile(
@@ -261,10 +271,7 @@ class _EditTaskState extends State<EditTask> {
                     valueChangeHandler: (newSubgoal, index) {
                       setState(() {
                         DocumentReference ref = sub.ref;
-                        _SubgoalData theNewSubgoal =
-                            new _SubgoalData(subgoal: newSubgoal, order: index);
-                        print(theNewSubgoal.toString());
-                        print(theNewSubgoal.toJson());
+                        _SubgoalData theNewSubgoal = _SubgoalData(subgoal: newSubgoal, order: min(0, index - 1));
                         _subgoals[index] = theNewSubgoal;
                         Firestore.instance
                             .collection("todos")
