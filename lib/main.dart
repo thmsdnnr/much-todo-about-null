@@ -408,6 +408,23 @@ class _MyHomePageState extends State<MyHomePage> {
     return _durationToQuery[_timeFilterDuration].snapshots();
   }
 
+  void subgoalCount(doc) async {
+     await Firestore.instance
+        .collection("todos")
+        .document(doc.documentID)
+        .collection("subgoals")
+        .getDocuments()
+        .then((data) {
+          int totalSubgoals = data.documents.length;
+          int completedSubgoals = data.documents.where((doc) => doc.data['completed'] == true).length;
+          return {
+            "total": totalSubgoals,
+            "completed": completedSubgoals,
+            "percent": (100*(completedSubgoals / totalSubgoals)).toInt(),
+          };
+        });
+    }
+
   buildTodoList(stream) {
     return Center(
         child: GestureDetector(
@@ -441,6 +458,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   buildTodoRow(DocumentSnapshot doc) {
+    subgoalCount(doc);
     // TODO: display count of subgoals / completion count
     // TODO: display tags for task type
     final ThemeData theme = Theme.of(context);
