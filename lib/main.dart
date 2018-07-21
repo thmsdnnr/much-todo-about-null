@@ -229,7 +229,6 @@ class _EditTaskState extends State<EditTask> {
       setState(() {
         _subgoals = data.documents.map((doc) => fromDoc(doc)).toList()
           ..sort((a, b) => a.order.compareTo(b.order));
-        print(_subgoals.map((sg) => sg.toString()));
         _subgoals.add(_SubgoalData(isBlankSlate: true));
       });
     });
@@ -283,15 +282,14 @@ class _EditTaskState extends State<EditTask> {
                       });
                     },
                     completionChangeHandler: () {
-                      print("handle completion");
                       bool completionStatus = !sub.completed;
                       DocumentReference ref = sub.ref;
                       Firestore.instance
-                            .collection("todos")
-                            .document(widget.documentId)
-                            .collection("subgoals")
-                            .document(ref.documentID)
-                            .updateData({"completed": completionStatus});
+                          .collection("todos")
+                          .document(widget.documentId)
+                          .collection("subgoals")
+                          .document(ref.documentID)
+                          .updateData({"completed": completionStatus});
                       getSubGoals();
                     },
                   ),
@@ -443,8 +441,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   buildTodoRow(DocumentSnapshot doc) {
-    // TODO: progress bar
-    // TODO: conditional / color formatting
+    // TODO: display count of subgoals / completion count
+    // TODO: display tags for task type
     final ThemeData theme = Theme.of(context);
     return Builder(builder: (BuildContext context) {
       return Dismissible(

@@ -8,13 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class _InputDropdown extends StatelessWidget {
-  const _InputDropdown({
-    Key key,
-    this.child,
-    this.labelText,
-    this.valueText,
-    this.valueStyle,
-    this.onPressed }) : super(key: key);
+  const _InputDropdown(
+      {Key key,
+      this.child,
+      this.labelText,
+      this.valueText,
+      this.valueStyle,
+      this.onPressed})
+      : super(key: key);
 
   final String labelText;
   final String valueText;
@@ -37,8 +38,9 @@ class _InputDropdown extends StatelessWidget {
           children: <Widget>[
             new Text(valueText, style: valueStyle),
             new Icon(Icons.arrow_drop_down,
-              color: Theme.of(context).brightness == Brightness.light ? Colors.grey.shade700 : Colors.white70
-            ),
+                color: Theme.of(context).brightness == Brightness.light
+                    ? Colors.grey.shade700
+                    : Colors.white70),
           ],
         ),
       ),
@@ -47,14 +49,14 @@ class _InputDropdown extends StatelessWidget {
 }
 
 class DateTimePicker extends StatelessWidget {
-  const DateTimePicker({
-    Key key,
-    this.labelText,
-    this.selectedDate,
-    this.selectedTime,
-    this.selectDate,
-    this.selectTime
-  }) : super(key: key);
+  const DateTimePicker(
+      {Key key,
+      this.labelText,
+      this.selectedDate,
+      this.selectedTime,
+      this.selectDate,
+      this.selectTime})
+      : super(key: key);
 
   final String labelText;
   final DateTime selectedDate;
@@ -64,13 +66,11 @@ class DateTimePicker extends StatelessWidget {
 
   Future<Null> _selectDate(BuildContext context) async {
     final DateTime picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: new DateTime.now().subtract(Duration(days: 1)),
-      lastDate: new DateTime(2101)
-    );
-    if (picked != null && picked != selectedDate)
-      selectDate(picked);
+        context: context,
+        initialDate: selectedDate,
+        firstDate: new DateTime.now().subtract(Duration(days: 1)),
+        lastDate: new DateTime(2101));
+    if (picked != null && picked != selectedDate) selectDate(picked);
   }
 
   Future<Null> _selectTime(BuildContext context) async {
@@ -78,8 +78,7 @@ class DateTimePicker extends StatelessWidget {
       context: context,
       initialTime: TimeOfDay.now(),
     );
-    if (picked != null && picked != selectedTime)
-      selectTime(picked);
+    if (picked != null && picked != selectedTime) selectTime(picked);
   }
 
   @override
@@ -94,7 +93,9 @@ class DateTimePicker extends StatelessWidget {
             labelText: labelText,
             valueText: new DateFormat.yMMMd().format(selectedDate),
             valueStyle: valueStyle,
-            onPressed: () { _selectDate(context); },
+            onPressed: () {
+              _selectDate(context);
+            },
           ),
         ),
         const SizedBox(width: 12.0),
@@ -103,7 +104,9 @@ class DateTimePicker extends StatelessWidget {
           child: new _InputDropdown(
             valueText: selectedTime.format(context),
             valueStyle: valueStyle,
-            onPressed: () { _selectTime(context); },
+            onPressed: () {
+              _selectTime(context);
+            },
           ),
         ),
       ],
