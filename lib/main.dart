@@ -71,7 +71,7 @@ class TodoFormState extends State<TodoForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   _TodoData _data = _TodoData();
   DateTime _toDate = DateTime.now();
-  TimeOfDay _toTime = TimeOfDay(hour: 7, minute: 28);
+  TimeOfDay _toTime = TimeOfDay.now();
   bool isDue = false;
   void submit() {
     if (this._formKey.currentState.validate()) {
@@ -288,8 +288,6 @@ class _EditTaskState extends State<EditTask> {
 
   @override
   Widget build(BuildContext context) {
-    // List<Widget> itemList = displaySubgoals(_subgoals);
-    // itemList.add(getFreshAddItem(widget.task));
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.task['task']),
@@ -309,11 +307,6 @@ class _EditTaskState extends State<EditTask> {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // TODO: add "todo dashboard" to front page with a graph thing or whatevs
-  // TODO: time estimates "that's ambitious", etc.
-  // TODO: add login
-  // TODO: add todo list export / e-mail reminders / text reminders
-  // TODO: system notifications https://pub.dartlang.org/packages/firebase_messaging
   var _showCompleted = false;
   var _showDeleted = false;
   var _completed;
@@ -437,8 +430,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   buildTodoRow(DocumentSnapshot doc) {
-    // TODO: make build Todo Row have ability to show child items
-    // TODO: chips
     // TODO: progress bar
     // TODO: conditional / color formatting
     final ThemeData theme = Theme.of(context);
