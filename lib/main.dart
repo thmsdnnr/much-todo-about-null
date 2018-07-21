@@ -113,8 +113,6 @@ class TodoFormState extends State<TodoForm> {
                         this._data.todo = todo;
                       }),
                   DateTimePicker(
-                    // TODO: make dropdown with "Today" / "Tomorrow" / etc
-                    // more specific calendar icon to launch the DateTimePicker
                     labelText: 'Due Date',
                     selectedDate: _toDate,
                     selectedTime: _toTime,
@@ -213,6 +211,7 @@ class _EditTaskState extends State<EditTask> {
 
   void getSubGoals() async {
     _SubgoalData fromDoc(doc) {
+      print(doc.data);
       return _SubgoalData(
         subgoal: doc.data['subgoal'],
         completed: doc.data['completed'],
@@ -230,6 +229,7 @@ class _EditTaskState extends State<EditTask> {
       setState(() {
         _subgoals = data.documents.map((doc) => fromDoc(doc)).toList()
           ..sort((a, b) => a.order.compareTo(b.order));
+        print(_subgoals.map((sg) => sg.toString()));
         _subgoals.add(_SubgoalData(isBlankSlate: true));
       });
     });
@@ -241,23 +241,22 @@ class _EditTaskState extends State<EditTask> {
         itemBuilder: (_, int index) {
           final sub = _subgoals[index];
           return sub.isBlankSlate
-              ? getFreshAddItem()
+              ? _isEditing ? getFreshAddItem() : null
               : ListTile(
                   leading: _isEditing
                       ? IconButton(
                           icon: Icon(Icons.arrow_upward),
                           onPressed: () {
-                            // TODO: perhaps just rewrite entire array for persistence
                             Firestore.instance
-                              .collection("todos")
-                              .document(widget.documentId)
-                              .collection("subgoals")
-                              .document(sub.ref.documentID)
-                              .updateData({"order": min(0, index - 1)});
+                                .collection("todos")
+                                .document(widget.documentId)
+                                .collection("subgoals")
+                                .document(sub.ref.documentID)
+                                .updateData({"order": min(0, index - 1)});
                             setState(() {
                               if (index > 0) {
-                                var temp = _subgoals[index-1];
-                                _subgoals[index-1] = _subgoals[index];
+                                var temp = _subgoals[index - 1];
+                                _subgoals[index - 1] = _subgoals[index];
                                 _subgoals[index] = temp;
                               }
                             });
@@ -271,7 +270,8 @@ class _EditTaskState extends State<EditTask> {
                     valueChangeHandler: (newSubgoal, index) {
                       setState(() {
                         DocumentReference ref = sub.ref;
-                        _SubgoalData theNewSubgoal = _SubgoalData(subgoal: newSubgoal, order: min(0, index - 1));
+                        _SubgoalData theNewSubgoal = _SubgoalData(
+                            subgoal: newSubgoal, order: min(0, index - 1));
                         _subgoals[index] = theNewSubgoal;
                         Firestore.instance
                             .collection("todos")
