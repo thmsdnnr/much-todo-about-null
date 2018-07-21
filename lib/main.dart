@@ -205,13 +205,13 @@ class _EditTaskState extends State<EditTask> {
                 .collection("subgoals")
                 .add(newSubgoal.toJson());
             _subgoals.add(_SubgoalData(isBlankSlate: true));
+            getSubGoals();
           }),
     );
   }
 
   void getSubGoals() async {
     _SubgoalData fromDoc(doc) {
-      print(doc.data);
       return _SubgoalData(
         subgoal: doc.data['subgoal'],
         completed: doc.data['completed'],
@@ -267,6 +267,7 @@ class _EditTaskState extends State<EditTask> {
                     subtitle: sub.subgoal,
                     clearOnEdit: false,
                     isEditable: _isEditing,
+                    isCompleted: sub.completed,
                     valueChangeHandler: (newSubgoal, index) {
                       setState(() {
                         DocumentReference ref = sub.ref;
@@ -280,6 +281,18 @@ class _EditTaskState extends State<EditTask> {
                             .document(ref.documentID)
                             .updateData(theNewSubgoal.toJson());
                       });
+                    },
+                    completionChangeHandler: () {
+                      print("handle completion");
+                      bool completionStatus = !sub.completed;
+                      DocumentReference ref = sub.ref;
+                      Firestore.instance
+                            .collection("todos")
+                            .document(widget.documentId)
+                            .collection("subgoals")
+                            .document(ref.documentID)
+                            .updateData({"completed": completionStatus});
+                      getSubGoals();
                     },
                   ),
                 );

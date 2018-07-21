@@ -6,10 +6,12 @@ class EditableListTile extends StatefulWidget {
     this.subtitle,
     this.labelText,
     this.valueChangeHandler,
+    this.completionChangeHandler,
     this.keyboardType = TextInputType.text,
     this.clearOnEdit = false,
     this.icon = Icons.edit,
     this.isEditable,
+    this.isCompleted = false,
   });
 
   final title;
@@ -20,6 +22,8 @@ class EditableListTile extends StatefulWidget {
   final clearOnEdit;
   final icon;
   final isEditable;
+  final isCompleted;
+  final completionChangeHandler;
 
   @override
   _EditableListTileState createState() => _EditableListTileState();
@@ -96,31 +100,24 @@ class _EditableListTileState extends State<EditableListTile> {
     );
   }
 
+  final completedStyle = TextStyle(
+    decoration: TextDecoration.lineThrough,
+    decorationColor: Colors.redAccent,
+  );
+
   Widget displayOnly() {
     return ListTile(
-      onTap: () {
-        setState(() {
-          _isEditing = true;
-          _currentValue = widget.subtitle;
-          _textController.text = widget.subtitle;
-          if (widget.clearOnEdit == true) {
-            _textController.clear();
-          }
-        });
-      },
-      title: Text(widget.title),
-      trailing: IconButton(
-          icon: Icon(Icons.style),
-          onPressed: () {
-            setState(() {
-              _isEditing = true;
-              _currentValue = widget.subtitle;
-              _textController.text = widget.subtitle;
-              if (widget.clearOnEdit == true) {
-                _textController.clear();
-              }
-            });
-          }),
+      title: Text(
+        widget.title,
+        style: widget.isCompleted ? completedStyle : null,
+      ),
+      leading: widget.isCompleted
+          ? null
+          : IconButton(
+              icon: Icon(Icons.check),
+              onPressed: () {
+                widget.completionChangeHandler();
+              }),
     );
   }
 }
