@@ -25,7 +25,7 @@ Duration diffDate(date) {
         ? ""
         : minutes > 1
             ? "$minutes minutes"
-            : minutes > 0 ? "$minutes minute" : "";
+            : minutes > 0 ? "$minutes minute" : "less than a minute";
     final days =
         difference.inDays.abs() < 7 ? difference.inDays.abs().floor() : 0;
     final dayString =
