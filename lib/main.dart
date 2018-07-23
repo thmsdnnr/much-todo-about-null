@@ -45,6 +45,8 @@ class _TodoData {
         'task': todo,
         'completed': completed,
         'due': utcDateTime,
+        'subgoalTotal': 0,
+        'subgoalCompleted': 0,
       };
 }
 
@@ -273,17 +275,28 @@ class _EditTaskState extends State<EditTask> {
                         _SubgoalData theNewSubgoal = _SubgoalData(
                             subgoal: newSubgoal, order: min(0, index - 1));
                         _subgoals[index] = theNewSubgoal;
+                        final int totalSubgoal = widget.task["subgoalTotal"];
                         Firestore.instance
                             .collection("todos")
                             .document(widget.documentId)
                             .collection("subgoals")
                             .document(ref.documentID)
                             .updateData(theNewSubgoal.toJson());
+                        Firestore.instance
+                            .collection("todos")
+                            .document(widget.documentId)
+                            .updateData({"subgoalTotal": totalSubgoal + 1});
                       });
                     },
                     completionChangeHandler: () {
                       bool completionStatus = !sub.completed;
                       DocumentReference ref = sub.ref;
+                      final completedSubgoals = widget.task["subgoalCompleted"];
+                      Firestore.instance
+                          .collection("todos")
+                          .document(widget.documentId)
+                          .updateData(
+                              {"subgoalCompleted": completedSubgoals + 1});
                       Firestore.instance
                           .collection("todos")
                           .document(widget.documentId)
@@ -408,23 +421,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return _durationToQuery[_timeFilterDuration].snapshots();
   }
 
-  void subgoalCount(doc) async {
-     await Firestore.instance
-        .collection("todos")
-        .document(doc.documentID)
-        .collection("subgoals")
-        .getDocuments()
-        .then((data) {
-          int totalSubgoals = data.documents.length;
-          int completedSubgoals = data.documents.where((doc) => doc.data['completed'] == true).length;
-          return {
-            "total": totalSubgoals,
-            "completed": completedSubgoals,
-            "percent": (100*(completedSubgoals / totalSubgoals)).toInt(),
-          };
-        });
-    }
-
   buildTodoList(stream) {
     return Center(
         child: GestureDetector(
@@ -457,8 +453,13 @@ class _MyHomePageState extends State<MyHomePage> {
     return map;
   }
 
+  String formatSubgoals(doc) {
+    return doc['subgoalTotal'] != 0
+        ? "${doc['subgoalCompleted']} / ${doc['subgoalTotal']}"
+        : "";
+  }
+
   buildTodoRow(DocumentSnapshot doc) {
-    subgoalCount(doc);
     // TODO: display count of subgoals / completion count
     // TODO: display tags for task type
     final ThemeData theme = Theme.of(context);
@@ -483,11 +484,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   trailing: const Icon(Icons.check,
                       color: Colors.white, size: 36.0))),
           child: ListTile(
+              trailing: Text("${formatSubgoals(doc)}"),
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) => EditTask(doc, doc.documentID))),
-              title: Text(doc['task']),
+              title: Text("${doc['task']}"),
               subtitle: Text("${formatDate(doc['due'])}")));
     });
   }
